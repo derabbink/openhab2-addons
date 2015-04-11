@@ -30,11 +30,4 @@
 		<nature>org.eclipse.pde.PluginNature</nature>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>zigbee-api-2.0.2.jar</name>
-			<type>1</type>
-			<locationURI>zigbee-api-2.0.2.jar</locationURI>
-		</link>
-	</linkedResources>
 </projectDescription>
