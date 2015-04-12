@@ -115,7 +115,7 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
 
         zigbeeApi = new ZigBeeApi(networkInterface, panId, channelId, false, discoveryModes);
         if (!zigbeeApi.startup()) {
-            logger.debug("Unable to start ZigBee network");
+            logger.error("Unable to start ZigBee network");
             
             // TODO: Close the network!
             
@@ -301,18 +301,16 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
 
 	@Override
 	public void deviceAdded(Device device) {
-		// TODO Auto-generated method stub
-		logger.debug("Device ADDED: {} {} {}", device.getIeeeAddress(),
-				device.getDeviceType(), device.getProfileId());
+		logger.debug("Device ADDED: '{}' {} {}", device.getDeviceType(),
+					device.getEndpointId(), device.getProfileId());
 		
 		addNewDevice(device);
 	}
 
 	@Override
 	public void deviceUpdated(Device device) {
-		// TODO Auto-generated method stub
-		logger.debug("Device UPDATED: {} {} {}", device.getIeeeAddress(),
-				device.getDeviceType(), device.getProfileId());
+		logger.debug("Device UPDATED: '{}' {} {}", device.getDeviceType(),
+					device.getEndpointId(), device.getProfileId());
 
 		ZigBeeEventListener listener = eventListeners.get(device.getEndpointId());
 		if (listener != null) {
@@ -322,9 +320,8 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
 
 	@Override
 	public void deviceRemoved(Device device) {
-		// TODO Auto-generated method stub
-		logger.debug("Device REMOVED: {} {} {}", device.getIeeeAddress(),
-				device.getDeviceType(), device.getProfileId());
+		logger.debug("Device REMOVED: '{}' {} {}", device.getDeviceType(),
+					device.getEndpointId(), device.getProfileId());
 
 		ZigBeeEventListener listener = eventListeners.get(device.getEndpointId());
 		if (listener != null) {
@@ -345,8 +342,8 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
 
 	private class DiscoveryThread extends Thread {
 		public void run(Device device) {
-			logger.debug("Device Discovery: {} {} {}", device.getIeeeAddress(),
-					device.getDeviceType(), device.getProfileId());
+			logger.debug("Device Discovery: '{}' {} {}", device.getDeviceType(),
+					device.getEndpointId(), device.getProfileId());
 			
 			String description = null;
 			Object manufacturer = readAttribute(device, 0, 4);		// Manufacturer

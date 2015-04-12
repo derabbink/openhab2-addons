@@ -134,8 +134,8 @@ public class ZigBeeDiscoveryService extends AbstractDiscoveryService {
 	}
 
 	public void deviceAdded(Device device, String description) {
-		logger.debug("Device discovery: {} {} {}", device.getEndpointId(),
-				device.getDeviceType(), device.getProfileId());
+		logger.debug("Device discovery: '{}' {} {}", device.getDeviceType(),
+				device.getEndpointId(), device.getProfileId());
 
 		ThingUID thingUID = getThingUID(device);
 		if (thingUID != null) {
@@ -153,8 +153,8 @@ public class ZigBeeDiscoveryService extends AbstractDiscoveryService {
 
 			thingDiscovered(discoveryResult);
 		} else {
-			logger.debug("Discovered unknown device type '{}' at address {}",
-					device.getDeviceType(), device.getIeeeAddress());
+			logger.info("Discovered unknown device type '{}' at address {}",
+					device.getDeviceType(), device.getEndpointId());
 		}
 	}
 
