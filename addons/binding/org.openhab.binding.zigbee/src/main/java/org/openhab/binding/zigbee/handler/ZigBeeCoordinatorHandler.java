@@ -33,6 +33,8 @@ import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
+import org.eclipse.smarthome.core.thing.ThingStatusDetail;
+import org.eclipse.smarthome.core.thing.ThingStatusInfo;
 import org.eclipse.smarthome.core.thing.binding.BaseBridgeHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.openhab.binding.zigbee.discovery.ZigBeeDiscoveryService;
@@ -98,10 +100,10 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
 	}
 
 	@Override
-	protected void updateStatus(ThingStatus status) {
-		super.updateStatus(status);
+	protected void updateStatus(ThingStatus status, ThingStatusDetail detail, String desc) {
+		super.updateStatus(status, detail, desc);
 		for (Thing child : getThing().getThings()) {
-			child.setStatus(status);
+			child.setStatusInfo(new ThingStatusInfo(status, detail, desc));
 		}
 	}
 	

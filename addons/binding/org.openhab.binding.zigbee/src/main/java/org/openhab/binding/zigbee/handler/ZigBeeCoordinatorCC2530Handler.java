@@ -24,6 +24,8 @@ import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
+import org.eclipse.smarthome.core.thing.ThingStatusDetail;
+import org.eclipse.smarthome.core.thing.ThingStatusInfo;
 import org.eclipse.smarthome.core.types.Command;
 //import org.openhab.binding.zigbee.network.port.ZigBeeSerialPortImpl;
 import org.slf4j.Logger;
@@ -79,10 +81,10 @@ public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler imp
 	}
 
 	@Override
-	protected void updateStatus(ThingStatus status) {
-		super.updateStatus(status);
+	protected void updateStatus(ThingStatus status, ThingStatusDetail detail, String desc) {
+		super.updateStatus(status, detail, desc);
 		for (Thing child : getThing().getThings()) {
-			child.setStatus(status);
+			child.setStatusInfo(new ThingStatusInfo(status, detail, desc));
 		}
 	}
 
