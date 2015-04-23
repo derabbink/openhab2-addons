@@ -57,8 +57,8 @@ public class ZigBeeLightHandler extends BaseThingHandler implements
 	private LevelControl clusLevel;
 	private ColorControl clusColor;
 
-	private OnOffType currentOnOff;
-	private HSBType currentHSB;
+	private OnOffType currentOnOff = OnOffType.OFF;
+	private HSBType currentHSB = new HSBType(new DecimalType(0), new PercentType(0), PercentType.HUNDRED);
 
 	private Logger logger = LoggerFactory.getLogger(ZigBeeEventListener.class);
 
@@ -145,7 +145,7 @@ public class ZigBeeLightHandler extends BaseThingHandler implements
 
 		case ZigBeeBindingConstants.CHANNEL_COLOR:
 			if (command instanceof HSBType) {
-				currentHSB = new HSBType(((HSBType)command).getHue(), currentHSB.getSaturation(), PercentType.HUNDRED);
+				currentHSB = new HSBType(command.toString());
 			} else if (command instanceof PercentType) {
 				currentHSB = new HSBType(currentHSB.getHue(), (PercentType)command, PercentType.HUNDRED);
 			} else if (command instanceof OnOffType) {
@@ -323,6 +323,7 @@ public class ZigBeeLightHandler extends BaseThingHandler implements
 			int saturation = state.getSaturation().intValue();
 			clusColor.moveToHue((int)(hue * 254.0 / 360.0 + 0.5), 0, 10);
 			clusColor.movetoSaturation((int)(saturation * 254.0 / 100.0 + 0.5), 10);
+			clusLevel.moveToLevelWithOnOff((short)(state.getBrightness().intValue() * 254.0 / 100.0 + 0.5), 10);
 			updateStatus(ThingStatus.ONLINE);
 		} catch (ZigBeeDeviceException e) {
 			updateStatus(ThingStatus.OFFLINE);
