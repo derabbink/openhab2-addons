@@ -114,7 +114,7 @@ public class ZigBeeDiscoveryService extends AbstractDiscoveryService {
 			}
 		}
 		if(bestThing == null) {
-			logger.debug("No ThingUID found for device");
+			logger.debug("No ThingUID found for device {}, type {} ({})", device.getDescription(), device.getDeviceType(), device.getDeviceTypeId());
 			return null;
 		}
 		logger.debug("Using ThingUID: {}", bestThing.getUID());

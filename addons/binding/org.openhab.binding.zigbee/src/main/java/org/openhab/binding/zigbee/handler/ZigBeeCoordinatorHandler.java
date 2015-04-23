@@ -52,7 +52,7 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
 	protected int panId;
 	protected int channelId;
 
-	protected ZigBeeApi zigbeeApi;
+	protected ZigBeeApi zigbeeApi = null;
 	private ScheduledFuture<?> pollingJob;
 	
 	private ZigBeeDiscoveryService discoveryService;
@@ -82,11 +82,6 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
 
 		panId = ((BigDecimal)getConfig().get(PARAMETER_PANID)).intValue();
 		channelId = ((BigDecimal)getConfig().get(PARAMETER_CHANNEL)).intValue();
-		//panId = Integer.parseInt((String) getConfig().get(PARAMETER_PANID));
-		//channelId = Integer.parseInt((String) getConfig()
-		//		.get(PARAMETER_CHANNEL));
-
-		super.initialize();
 	}
 
 	@Override
@@ -95,8 +90,16 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
 		discoveryService.deactivate();
 
 		// Shut down the ZigBee library
-		zigbeeApi.shutdown();
+		if(zigbeeApi != null) {
+			zigbeeApi.shutdown();
+		}
 		logger.debug("ZigBee network closed.");
+	}
+
+	@Override
+	public void thingUpdated(Thing thing) {
+		super.thingUpdated(thing);
+		logger.debug("Updating coordinator");
 	}
 
 	@Override
@@ -117,36 +120,16 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
 
         zigbeeApi = new ZigBeeApi(networkInterface, panId, channelId, false, discoveryModes);
         if (!zigbeeApi.startup()) {
-            logger.error("Unable to start ZigBee network");
-            
-            // TODO: Close the network!
-            
-            
+        	updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.HANDLER_INITIALIZING_ERROR, "Unable to start ZigBee network");
+
+    		// Shut down the ZigBee library
+    		zigbeeApi.shutdown();
+    		zigbeeApi = null;
         } else {
             logger.debug("ZigBee network started");
             
             waitForNetwork();
         }
-	}
-
-	/**
-	 * Called after initial browsing is complete. At this point we're good to go
-	 */
-	protected void browsingComplete() {
-		logger.debug("ZigBee network READY. Found "
-				+ zigbeeApi.getDevices().size() + " nodes.");
-
-		final List<Device> devices = zigbeeApi.getDevices();
-		for (int i = 0; i < devices.size(); i++) {
-			final Device device = devices.get(i);
-			logger.debug("ZigBee '{}' device at address {}",
-					device.getDeviceType(), device.getEndpointId());
-
-			addNewDevice(device);
-		}
-
-		// Add a listener for any new devices
-		zigbeeApi.addDeviceListener(this);
 	}
 
 	/**
@@ -177,6 +160,28 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
 
 		// Kick off the discovery
 		thread.start();
+	}
+
+	/**
+	 * Called after initial browsing is complete. At this point we're good to go
+	 */
+	protected void browsingComplete() {
+        updateStatus(ThingStatus.ONLINE);
+
+		logger.debug("ZigBee network READY. Found "
+				+ zigbeeApi.getDevices().size() + " nodes.");
+
+		final List<Device> devices = zigbeeApi.getDevices();
+		for (int i = 0; i < devices.size(); i++) {
+			final Device device = devices.get(i);
+			logger.debug("ZigBee '{}' device at address {}",
+					device.getDeviceType(), device.getEndpointId());
+
+			addNewDevice(device);
+		}
+
+		// Add a listener for any new devices
+		zigbeeApi.addDeviceListener(this);
 	}
 
 	private Device getDeviceByIndexOrEndpointId(ZigBeeApi zigbeeApi,

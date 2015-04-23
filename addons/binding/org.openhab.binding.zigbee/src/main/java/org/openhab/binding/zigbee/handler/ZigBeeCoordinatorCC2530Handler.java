@@ -13,11 +13,14 @@ import gnu.io.CommPortIdentifier;
 import gnu.io.NoSuchPortException;
 import gnu.io.PortInUseException;
 import gnu.io.SerialPort;
+import gnu.io.SerialPortEvent;
+import gnu.io.SerialPortEventListener;
 import gnu.io.UnsupportedCommOperationException;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.TooManyListenersException;
 
 import org.bubblecloud.zigbee.network.port.ZigBeePort;
 import org.eclipse.smarthome.core.thing.Bridge;
@@ -37,7 +40,7 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Chris Jackson - Initial contribution
  */
-public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler implements ZigBeePort {
+public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler implements ZigBeePort, SerialPortEventListener {
 	private String portId;
 
 	private Logger logger = LoggerFactory
@@ -65,19 +68,13 @@ public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler imp
 				"ZigBee Coordinator CC2530 opening Port:'{}' PAN:{}, Channel:{}",
 				portId, Integer.toHexString(panId),
 				Integer.toString(channelId));
-		
-		// TODO: Some of this needs to move to the parent class
-		// TODO: Only the port initialisation should be done here and then pass
-		// TODO: This to the parent to handle the protocol.
-		// TODO: Needs splitting IO in the library!
-        //discoveryModes.remove(DiscoveryMode.LinkQuality);
-//        ZigBeePort serialPort = new ZigBeeSerialPortImpl(portId, 115200);
 
 		initializeZigBee(this);
 	}
 
 	@Override
-	public void dispose() {
+	public void thingUpdated(Thing thing) {
+		super.thingUpdated(thing);
 	}
 
 	@Override
@@ -119,13 +116,13 @@ public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler imp
 			serialPort.setSerialPortParams(baudRate, SerialPort.DATABITS_8,
 					SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
 			this.serialPort.enableReceiveThreshold(1);
-			this.serialPort.enableReceiveTimeout(120000);
+			this.serialPort.enableReceiveTimeout(2000);
 
 			// RXTX serial port library causes high CPU load
 			// Start event listener, which will just sleep and slow down event
 			// loop
-			// serialPort.addEventListener(this.receiveThread);
-			// serialPort.notifyOnDataAvailable(true);
+			serialPort.addEventListener(this);
+			serialPort.notifyOnDataAvailable(true);
 
 			logger.info("Serial port is initialized");
 		} catch (NoSuchPortException e) {
@@ -138,6 +135,10 @@ public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler imp
 			logger.error(
 					"Serial Error: Unsupported comm operation on Port {}.",
 					serialPortName);
+			return;
+		} catch (TooManyListenersException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 			return;
 		}
 
@@ -156,19 +157,14 @@ public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler imp
 	public void close() {
 		try {
 			if (serialPort != null) {
-				while (inputStream.available() > 0) {
-					try {
-						Thread.sleep(100);
-					} catch (final InterruptedException e) {
-						logger.warn("Interrupted while waiting input stream to flush.");
-					}
-				}
+				this.serialPort.enableReceiveTimeout(1);
+
 				inputStream.close();
 				outputStream.flush();
 				outputStream.close();
+				
 				serialPort.close();
-				// logger.info("Serial port '" + serialPort.getName() +
-				// "' closed.");
+				
 				serialPort = null;
 				inputStream = null;
 				outputStream = null;
@@ -187,6 +183,15 @@ public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler imp
 	@Override
 	public InputStream getInputStream() {
 		return inputStream;
+	}
+
+	@Override
+	public void serialEvent(SerialPortEvent arg0) {
+		try {
+			logger.trace("RXTX library CPU load workaround, sleep forever");
+			Thread.sleep(Long.MAX_VALUE);
+		} catch (InterruptedException e) {
+		}
 	}
 
 }
