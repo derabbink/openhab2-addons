@@ -6,6 +6,10 @@
 
 	<!-- On/Off Light Thing -->
 	<thing-type id="OnOffLight">
+		<supported-bridge-type-refs>
+            <bridge-type-ref id="coordinator_cc2530" />
+        </supported-bridge-type-refs>
+
 		<label>On/Off Light</label>
 		<description>Light supporting ON/OFF</description>
 		<channels>
@@ -15,6 +19,9 @@
 
 	<!-- Dimmable Light Thing -->
 	<thing-type id="DimmableLight">
+		<supported-bridge-type-refs>
+            <bridge-type-ref id="coordinator_cc2530" />
+        </supported-bridge-type-refs>
 		<label>Dimmable Light</label>
 		<description>Dimmable light supporting ON/OFF and Brightness adjustment</description>
 		<channels>
@@ -25,8 +32,13 @@
 
 	<!-- Color Dimmable Light Thing -->
 	<thing-type id="ColorDimmableLight">
+        <supported-bridge-type-refs>
+            <bridge-type-ref id="coordinator_cc2530" />
+        </supported-bridge-type-refs>
+
 		<label>Color Dimmable Light</label>
 		<description>Color dimmable light supporting ON/OFF, Brightness and Color adjustment</description>
+        
 		<channels>
 			<channel id="switch" typeId="switch" />
 			<channel id="brightness" typeId="brightness" />

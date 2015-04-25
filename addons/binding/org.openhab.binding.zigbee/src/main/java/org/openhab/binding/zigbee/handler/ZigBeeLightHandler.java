@@ -112,6 +112,7 @@ public class ZigBeeLightHandler extends BaseThingHandler implements
 	public void handleCommand(ChannelUID channelUID, Command command) {
 		if (coordinatorHandler == null) {
 			logger.warn("Coordinator handler not found. Cannot handle command without coordinator.");
+			updateStatus(ThingStatus.OFFLINE);
 			return;
 		}
 
