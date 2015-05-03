@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.bubblecloud.zigbee.ZigBeeApi;
 import org.bubblecloud.zigbee.api.Device;
@@ -53,7 +54,9 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
 	protected int channelId;
 
 	protected ZigBeeApi zigbeeApi = null;
-	private ScheduledFuture<?> pollingJob;
+	private ScheduledFuture<?> restartJob = null;
+
+	private ZigBeePort networkInterface;
 	
 	private ZigBeeDiscoveryService discoveryService;
 
@@ -78,7 +81,7 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
 
 	@Override
 	public void initialize() {
-		logger.debug("Initializing ZigBee coordinator.");
+		logger.debug("Initializing ZigBee network [{}].", this.thing.getUID());
 
 		panId = ((BigDecimal)getConfig().get(PARAMETER_PANID)).intValue();
 		channelId = ((BigDecimal)getConfig().get(PARAMETER_CHANNEL)).intValue();
@@ -88,18 +91,23 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
 	public void dispose() {
 		// Remove the discovery service
 		discoveryService.deactivate();
+		
+		// If we have scheduled tasks, stop them
+		if(restartJob != null) {
+		    restartJob.cancel(true);
+		}
 
 		// Shut down the ZigBee library
 		if(zigbeeApi != null) {
 			zigbeeApi.shutdown();
 		}
-		logger.debug("ZigBee network closed.");
+		logger.debug("ZigBee network [{}] closed.", this.thing.getUID());
 	}
 
 	@Override
 	public void thingUpdated(Thing thing) {
 		super.thingUpdated(thing);
-		logger.debug("Updating coordinator");
+		logger.debug("Updating coordinator [{}]", this.thing.getUID());
 	}
 
 	@Override
@@ -109,13 +117,24 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
 			child.setStatusInfo(new ThingStatusInfo(status, detail, desc));
 		}
 	}
-	
+
 	/**
 	 * Common initialisation point for all ZigBee coordinators.
 	 * Called by bridges after they have initialised their interfaces.
 	 * @param networkInterface a ZigBeePort interface instance
 	 */
-	protected void initializeZigBee(ZigBeePort networkInterface) {
+	protected void startZigBee(ZigBeePort networkInterface) {
+	    this.networkInterface = networkInterface;
+
+	    // Start the network. This is a scheduled task to ensure we give the coordinator
+	    // some time to initialise itself!
+	    startZigBeeNetwork();
+	}
+
+	/**
+	 * Initialise the ZigBee network
+	 */
+	private void initialiseZigBee() {	    
         final EnumSet<DiscoveryMode> discoveryModes = DiscoveryMode.ALL;
 
         zigbeeApi = new ZigBeeApi(networkInterface, panId, channelId, false, discoveryModes);
@@ -125,12 +144,46 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
     		// Shut down the ZigBee library
     		zigbeeApi.shutdown();
     		zigbeeApi = null;
+    		
+    		restartZigBeeNetwork();
         } else {
-            logger.debug("ZigBee network started");
+            logger.debug("ZigBee network [{}] started", this.thing.getUID());
             
             waitForNetwork();
         }
 	}
+
+    /**
+     * If the network initialisation fails, then periodically reschedule a restart
+     */
+    private void startZigBeeNetwork() {
+        Runnable runnable = new Runnable() {
+            public void run() {
+                logger.debug("ZigBee network starting");
+                restartJob = null;
+                initialiseZigBee();
+            }
+        };
+
+        logger.debug("Scheduleing ZigBee start");
+        restartJob = scheduler.schedule(runnable, 1, TimeUnit.SECONDS);
+    }
+
+    /**
+     * If the network initialisation fails, then periodically reschedule a restart
+     */
+    private void restartZigBeeNetwork() {
+        Runnable runnable = new Runnable() {
+            public void run() {
+                logger.debug("ZigBee network restarting");
+                restartJob = null;
+                initialiseZigBee();
+            }
+        };
+
+        logger.debug("Scheduleing ZigBee restart");
+        restartJob = scheduler.schedule(runnable, 15, TimeUnit.SECONDS);
+    }
 
 	/**
 	 * Wait for the network initialisation to complete.
@@ -143,7 +196,7 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
         // And register it as an OSGi service
         bundleContext.registerService(DiscoveryService.class.getName(), discoveryService, new Hashtable<String, Object>());
 
-		logger.debug("Browsing ZigBee network ...");
+		logger.debug("Browsing ZigBee network [{}]...", this.thing.getUID());
 		Thread thread = new Thread() {
 			public void run() {
 				while (!zigbeeApi.isInitialBrowsingComplete()) {
@@ -168,8 +221,8 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
 	protected void browsingComplete() {
         updateStatus(ThingStatus.ONLINE);
 
-		logger.debug("ZigBee network READY. Found "
-				+ zigbeeApi.getDevices().size() + " nodes.");
+		logger.debug("ZigBee network [{}] READY. Found {} nodes.", this.thing.getUID(),
+				zigbeeApi.getDevices().size());
 
 		final List<Device> devices = zigbeeApi.getDevices();
 		for (int i = 0; i < devices.size(); i++) {

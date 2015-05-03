@@ -69,7 +69,12 @@ public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler imp
 				portId, Integer.toHexString(panId),
 				Integer.toString(channelId));
 
-		initializeZigBee(this);
+		startZigBee(this);
+	}
+	
+	@Override
+    public void dispose() {
+	    close();
 	}
 
 	@Override
@@ -106,7 +111,7 @@ public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler imp
     }
 
 	private void openSerialPort(final String serialPortName, int baudRate) {
-		logger.info("Connecting to serial port {}", serialPortName);
+		logger.info("Connecting to serial port [{}]", serialPortName);
 		try {
 			CommPortIdentifier portIdentifier = CommPortIdentifier
 					.getPortIdentifier(serialPortName);
@@ -124,7 +129,7 @@ public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler imp
 			serialPort.addEventListener(this);
 			serialPort.notifyOnDataAvailable(true);
 
-			logger.info("Serial port is initialized");
+			logger.info("Serial port [{}] is initialized.", portId);
 		} catch (NoSuchPortException e) {
 			logger.error("Serial Error: Port {} does not exist", serialPortName);
 			return;
@@ -168,6 +173,8 @@ public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler imp
 				serialPort = null;
 				inputStream = null;
 				outputStream = null;
+				
+	            logger.info("Serial port [{}] is closed.", portId);
 			}
 		} catch (Exception e) {
 			// logger.warn("Error closing serial port: '" + serialPort.getName()
