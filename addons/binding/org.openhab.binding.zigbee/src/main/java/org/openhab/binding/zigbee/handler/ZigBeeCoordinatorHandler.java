@@ -138,13 +138,23 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
         final EnumSet<DiscoveryMode> discoveryModes = DiscoveryMode.ALL;
 
         zigbeeApi = new ZigBeeApi(networkInterface, panId, channelId, false, discoveryModes);
-        if (!zigbeeApi.startup()) {
+        zigbeeApi.initializeHardware();
+
+        boolean reset = false;
+        int channel = zigbeeApi.getZigBeeNetworkManager().getCurrentChannel();
+        int pan = zigbeeApi.getZigBeeNetworkManager().getCurrentPanId();
+        if(channel != channelId || pan != panId) {
+            logger.info("ZigBee current pan={}, channel={}. Network will be reset.", pan, channel);
+            reset = true;
+        }
+
+        if (!zigbeeApi.initializeNetwork(reset)) {
         	updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.HANDLER_INITIALIZING_ERROR, "Unable to start ZigBee network");
 
     		// Shut down the ZigBee library
     		zigbeeApi.shutdown();
     		zigbeeApi = null;
-    		
+
     		restartZigBeeNetwork();
         } else {
             logger.debug("ZigBee network [{}] started", this.thing.getUID());
@@ -165,7 +175,7 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler
             }
         };
 
-        logger.debug("Scheduleing ZigBee start");
+        logger.debug("Scheduling ZigBee start");
         restartJob = scheduler.schedule(runnable, 1, TimeUnit.SECONDS);
     }
 
