@@ -16,7 +16,7 @@ This page is a community effort - please help filling the gaps and analysing pot
 | Comfo Air |  |  |  |
 | Config Admin |  |  |  |
 | CUL | X | X |  |
-| CUPS |  |  |  |
+| CUPS |  |  | 2.0 version available (renamed to IPP) |
 | Davis |  |  |  |
 | digitalSTROM |  |  |  |
 | DSC Alarm |  |  |  |
@@ -71,7 +71,7 @@ This page is a community effort - please help filling the gaps and analysing pot
 | OWServer |  | X |  |
 | Philips Hue |  |  | 2.0 version available |
 | Piface | |  |  |
-| Pioneer-AVR-Binding | |  |  |
+| Pioneer-AVR-Binding | |  | 2.0 version available |
 | Plugwise |  |  |  | 
 | PLCBus |  |  |  | 
 | Pulseaudio |  |  | 2.0 version available |
@@ -86,11 +86,12 @@ This page is a community effort - please help filling the gaps and analysing pot
 | Swegon ventilation | X | X |  |
 | TCP/UDP |  |  |  |
 | Tellstick |  |  |  |
-| TinkerForge |  |  |  |
+| TinkerForge | X | X  | 2.0 version planned |
 | VDR |  |  |  |
 | Velleman-K8055 |  |  |  |
 | Wake-on-LAN |  |  |  |
 | Waterkotte EcoTouch Heatpump |  |  |  |
+| Weather | - | X |  |
 | Wemo |  |  | 2.0 version available |
 | Withings |  |  |  |
 | XBMC |  |  |  |
