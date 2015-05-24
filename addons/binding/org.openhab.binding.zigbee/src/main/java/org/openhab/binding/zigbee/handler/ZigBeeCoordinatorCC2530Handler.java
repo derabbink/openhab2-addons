@@ -40,64 +40,62 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Chris Jackson - Initial contribution
  */
-public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler implements ZigBeePort, SerialPortEventListener {
-	private String portId;
+public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler implements ZigBeePort,
+        SerialPortEventListener {
+    private String portId;
 
-	private Logger logger = LoggerFactory
-			.getLogger(ZigBeeCoordinatorCC2530Handler.class);
+    private Logger logger = LoggerFactory.getLogger(ZigBeeCoordinatorCC2530Handler.class);
 
-	public ZigBeeCoordinatorCC2530Handler(Bridge coordinator) {
-		super(coordinator);
-	}
+    public ZigBeeCoordinatorCC2530Handler(Bridge coordinator) {
+        super(coordinator);
+    }
 
-	@Override
-	public void handleCommand(ChannelUID channelUID, Command command) {
-		// Note required!
-	}
+    @Override
+    public void handleCommand(ChannelUID channelUID, Command command) {
+        // Note required!
+    }
 
-	@Override
-	public void initialize() {
-		logger.debug("Initializing ZigBee CC2530EMK serial bridge handler.");
+    @Override
+    public void initialize() {
+        logger.debug("Initializing ZigBee CC2530EMK serial bridge handler.");
 
-		portId = (String) getConfig().get(PARAMETER_PORT);
+        portId = (String) getConfig().get(PARAMETER_PORT);
 
-		// Call the parent to finish any global initialisation
-		super.initialize();
+        // Call the parent to finish any global initialisation
+        super.initialize();
 
-		logger.debug(
-				"ZigBee Coordinator CC2530 opening Port:'{}' PAN:{}, Channel:{}",
-				portId, Integer.toHexString(panId),
-				Integer.toString(channelId));
+        logger.debug("ZigBee Coordinator CC2530 opening Port:'{}' PAN:{}, Channel:{}", portId,
+                Integer.toHexString(panId), Integer.toString(channelId));
 
-		startZigBee(this);
-	}
-	
-	@Override
+        startZigBee(this);
+    }
+
+    @Override
     public void dispose() {
-	    close();
-	}
+        close();
+    }
 
-	@Override
-	public void thingUpdated(Thing thing) {
-		super.thingUpdated(thing);
-	}
+    @Override
+    public void thingUpdated(Thing thing) {
+        super.thingUpdated(thing);
+    }
 
-	@Override
-	protected void updateStatus(ThingStatus status, ThingStatusDetail detail, String desc) {
-		super.updateStatus(status, detail, desc);
-		for (Thing child : getThing().getThings()) {
-			child.setStatusInfo(new ThingStatusInfo(status, detail, desc));
-		}
-	}
+    @Override
+    protected void updateStatus(ThingStatus status, ThingStatusDetail detail, String desc) {
+        super.updateStatus(status, detail, desc);
+        for (Thing child : getThing().getThings()) {
+            child.setStatusInfo(new ThingStatusInfo(status, detail, desc));
+        }
+    }
 
-	// The serial port.
-	private SerialPort serialPort;
-	
-	// The serial port input stream.
-	private InputStream inputStream;
-	
-	// The serial port output stream.
-	private OutputStream outputStream;
+    // The serial port.
+    private SerialPort serialPort;
+
+    // The serial port input stream.
+    private InputStream inputStream;
+
+    // The serial port output stream.
+    private OutputStream outputStream;
 
     @Override
     public boolean open() {
@@ -110,95 +108,95 @@ public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler imp
         }
     }
 
-	private void openSerialPort(final String serialPortName, int baudRate) {
-		logger.info("Connecting to serial port [{}]", serialPortName);
-		try {
-			CommPortIdentifier portIdentifier = CommPortIdentifier
-					.getPortIdentifier(serialPortName);
-			CommPort commPort = portIdentifier.open(
-					"org.openhab.binding.zigbee", 2000);
-			serialPort = (SerialPort) commPort;
-			serialPort.setSerialPortParams(baudRate, SerialPort.DATABITS_8,
-					SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
-			this.serialPort.enableReceiveThreshold(1);
-			this.serialPort.enableReceiveTimeout(2000);
+    private void openSerialPort(final String serialPortName, int baudRate) {
+        logger.info("Connecting to serial port [{}]", serialPortName);
+        try {
+            CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier(serialPortName);
+            CommPort commPort = portIdentifier.open("org.openhab.binding.zigbee", 2000);
+            serialPort = (SerialPort) commPort;
+            serialPort.setSerialPortParams(baudRate, SerialPort.DATABITS_8, SerialPort.STOPBITS_1,
+                    SerialPort.PARITY_NONE);
+            this.serialPort.enableReceiveThreshold(1);
+            this.serialPort.enableReceiveTimeout(2000);
 
-			// RXTX serial port library causes high CPU load
-			// Start event listener, which will just sleep and slow down event
-			// loop
-			serialPort.addEventListener(this);
-			serialPort.notifyOnDataAvailable(true);
+            // RXTX serial port library causes high CPU load
+            // Start event listener, which will just sleep and slow down event
+            // loop
+            serialPort.addEventListener(this);
+            serialPort.notifyOnDataAvailable(true);
 
-			logger.info("Serial port [{}] is initialized.", portId);
-		} catch (NoSuchPortException e) {
-			logger.error("Serial Error: Port {} does not exist", serialPortName);
-			return;
-		} catch (PortInUseException e) {
-			logger.error("Serial Error: Port {} in use.", serialPortName);
-			return;
-		} catch (UnsupportedCommOperationException e) {
-			logger.error(
-					"Serial Error: Unsupported comm operation on Port {}.",
-					serialPortName);
-			return;
-		} catch (TooManyListenersException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return;
-		}
+            logger.info("Serial port [{}] is initialized.", portId);
+        } catch (NoSuchPortException e) {
+            logger.error("Serial Error: Port {} does not exist", serialPortName);
+            return;
+        } catch (PortInUseException e) {
+            logger.error("Serial Error: Port {} in use.", serialPortName);
+            return;
+        } catch (UnsupportedCommOperationException e) {
+            logger.error("Serial Error: Unsupported comm operation on Port {}.", serialPortName);
+            return;
+        } catch (TooManyListenersException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return;
+        }
 
-		try {
-			inputStream = serialPort.getInputStream();
-			outputStream = serialPort.getOutputStream();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        try {
+            inputStream = serialPort.getInputStream();
+            outputStream = serialPort.getOutputStream();
+            
+            // Write the 'magic byte'
+            // Note that this might change in future, or with different dongles
+            outputStream.write(0xef);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
-		return;
-	}
+        return;
+    }
 
-	@Override
-	public void close() {
-		try {
-			if (serialPort != null) {
-				this.serialPort.enableReceiveTimeout(1);
+    @Override
+    public void close() {
+        try {
+            if (serialPort != null) {
+                this.serialPort.enableReceiveTimeout(1);
 
-				inputStream.close();
-				outputStream.flush();
-				outputStream.close();
-				
-				serialPort.close();
-				
-				serialPort = null;
-				inputStream = null;
-				outputStream = null;
-				
-	            logger.info("Serial port [{}] is closed.", portId);
-			}
-		} catch (Exception e) {
-			// logger.warn("Error closing serial port: '" + serialPort.getName()
-			// + "'", e);
-		}
-	}
+                inputStream.close();
+                outputStream.flush();
+                outputStream.close();
 
-	@Override
-	public OutputStream getOutputStream() {
-		return outputStream;
-	}
+                serialPort.close();
 
-	@Override
-	public InputStream getInputStream() {
-		return inputStream;
-	}
+                serialPort = null;
+                inputStream = null;
+                outputStream = null;
 
-	@Override
-	public void serialEvent(SerialPortEvent arg0) {
-		try {
-			logger.trace("RXTX library CPU load workaround, sleep forever");
-			Thread.sleep(Long.MAX_VALUE);
-		} catch (InterruptedException e) {
-		}
-	}
+                logger.info("Serial port [{}] is closed.", portId);
+            }
+        } catch (Exception e) {
+            // logger.warn("Error closing serial port: '" + serialPort.getName()
+            // + "'", e);
+        }
+    }
+
+    @Override
+    public OutputStream getOutputStream() {
+        return outputStream;
+    }
+
+    @Override
+    public InputStream getInputStream() {
+        return inputStream;
+    }
+
+    @Override
+    public void serialEvent(SerialPortEvent arg0) {
+        try {
+            logger.trace("RXTX library CPU load workaround, sleep forever");
+            Thread.sleep(Long.MAX_VALUE);
+        } catch (InterruptedException e) {
+        }
+    }
 
 }
