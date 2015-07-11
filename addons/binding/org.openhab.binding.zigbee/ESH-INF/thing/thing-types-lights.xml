@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="zigbee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
+        xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
+
+	<!-- On/Off Light Thing -->
+	<thing-type id="OnOffLight">
+		<supported-bridge-type-refs>
+            <bridge-type-ref id="coordinator_cc2530" />
+        </supported-bridge-type-refs>
+
+		<label>On/Off Light</label>
+		<description>Light supporting ON/OFF</description>
+		<channels>
+			<channel id="switch" typeId="switch" />
+		</channels>
+	</thing-type>
+
+	<!-- Dimmable Light Thing -->
+	<thing-type id="DimmableLight">
+		<supported-bridge-type-refs>
+            <bridge-type-ref id="coordinator_cc2530" />
+        </supported-bridge-type-refs>
+		<label>Dimmable Light</label>
+		<description>Dimmable light supporting ON/OFF and Brightness adjustment</description>
+		<channels>
+			<channel id="switch" typeId="switch" />
+			<channel id="brightness" typeId="brightness" />
+		</channels>
+	</thing-type>
+
+	<!-- Color Dimmable Light Thing -->
+	<thing-type id="ColorDimmableLight">
+        <supported-bridge-type-refs>
+            <bridge-type-ref id="coordinator_cc2530" />
+        </supported-bridge-type-refs>
+
+		<label>Color Dimmable Light</label>
+		<description>Color dimmable light supporting ON/OFF, Brightness and Color adjustment</description>
+        
+		<channels>
+			<channel id="switch" typeId="switch" />
+			<channel id="brightness" typeId="brightness" />
+			<channel id="color" typeId="color" />
+			<channel id="color_temperature" typeId="color_temperature" />
+		</channels>
+	</thing-type>
+
+	<!-- Power ON / OFF Channel -->
+    <channel-type id="switch">
+        <item-type>OnOff</item-type>
+        <label>Power</label>
+        <description>The Power ON / OFF channel allows you to turn the power to a light on or off 
+        </description>
+        <category>Light</category>
+    </channel-type>
+
+
+    <!-- Color Channel -->
+    <channel-type id="color">
+        <item-type>Color</item-type>
+        <label>Color</label>
+        <description>The color channel allows to control the color of a light.
+            It is also possible to dim values and switch the light on and off.
+        </description>
+        <category>ColorLight</category>
+    </channel-type>
+
+    <!-- Brightness Channel -->
+    <channel-type id="brightness">
+        <item-type>Dimmer</item-type>
+        <label>Brightness</label>
+        <description>The brightness channel allows to control the brightness of a light.
+            It is also possible to switch the light on and off.
+        </description>
+        <category>DimmableLight</category>
+    </channel-type>
+
+    <!-- Color Temperature Channel -->
+    <channel-type id="color_temperature">
+        <item-type>Dimmer</item-type>
+        <label>Color Temperature</label>
+        <description>The color temperature channel allows to set the color
+            temperature of a light from 0 (cold) to 100 (warm).</description>
+        <category>ColorLight</category>
+    </channel-type>
+</thing:thing-descriptions>

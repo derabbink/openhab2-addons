@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="zigbee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
+        xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
+
+	<thing-type id="temperature">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="coordinator_cc2530" />
+		</supported-bridge-type-refs>
+	
+		<label>Temperature</label>
+		<description>Temperature</description>
+		<channels>
+			<channel id="temperature" typeId="temperature" />
+		</channels>
+		<config-description>
+            <parameter name="networkId" type="text">
+                <label>MAC ID</label>
+                <description>The MAC address of the sensor.</description>
+                <required>true</required>
+            </parameter>
+        </config-description>
+	</thing-type>
+
+	<thing-type id="temp_humidity">
+		<label>Temperature</label>
+		<description>Temperature</description>
+		<channels>
+			<channel id="humidity" typeId="humidity" />
+			<channel id="temperature" typeId="temperature" />
+		</channels>
+	</thing-type>
+
+
+	<!--  Humidity Channel -->
+	<channel-type id="humidity">
+		<item-type>Number</item-type>
+		<label>Relative Humidity</label>
+		<description>Measured relative humidity</description>
+		<category>Humidity</category>
+		<tags>
+			<tag>heating</tag>
+		</tags>
+		<state pattern="%d °C" readOnly="true">
+		</state>
+	</channel-type>
+
+	<!-- Temperature Channel -->
+	<channel-type id="temperature">
+		<item-type>Number</item-type>
+		<label>Temperature</label>
+		<description>Measured temperature</description>
+		<category>Temperature</category>
+		<tags>
+			<tag>heating</tag>
+		</tags>
+		<state pattern="%d °C" readOnly="true">
+		</state>
+	</channel-type>
+</thing:thing-descriptions>
