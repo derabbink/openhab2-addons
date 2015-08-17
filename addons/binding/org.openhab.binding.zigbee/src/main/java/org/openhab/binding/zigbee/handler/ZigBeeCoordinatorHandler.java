@@ -10,6 +10,7 @@ package org.openhab.binding.zigbee.handler;
 import static org.openhab.binding.zigbee.ZigBeeBindingConstants.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Hashtable;
 import java.util.List;
@@ -26,17 +27,18 @@ import org.bubblecloud.zigbee.api.cluster.impl.api.core.Attribute;
 import org.bubblecloud.zigbee.api.cluster.impl.api.core.ReportListener;
 import org.bubblecloud.zigbee.api.cluster.impl.api.core.ZigBeeClusterException;
 import org.bubblecloud.zigbee.api.cluster.impl.attribute.AttributeDescriptor;
+import org.bubblecloud.zigbee.network.NodeListener;
+import org.bubblecloud.zigbee.network.ZigBeeEndpoint;
+import org.bubblecloud.zigbee.network.ZigBeeNode;
 import org.bubblecloud.zigbee.network.model.DiscoveryMode;
 import org.bubblecloud.zigbee.network.port.ZigBeePort;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
 import org.eclipse.smarthome.core.thing.Bridge;
-import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.ThingStatusInfo;
 import org.eclipse.smarthome.core.thing.binding.BaseBridgeHandler;
-import org.eclipse.smarthome.core.types.Command;
 import org.openhab.binding.zigbee.discovery.ZigBeeDiscoveryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +49,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Chris Jackson - Initial contribution
  */
-public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler implements DeviceListener {
+public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler implements NodeListener {
     protected int panId;
     protected int channelId;
 
@@ -116,7 +118,7 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
     /**
      * Common initialisation point for all ZigBee coordinators.
      * Called by bridges after they have initialised their interfaces.
-     * 
+     *
      * @param networkInterface a ZigBeePort interface instance
      */
     protected void startZigBee(ZigBeePort networkInterface) {
@@ -131,6 +133,8 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
      * Initialise the ZigBee network
      */
     private void initialiseZigBee() {
+        logger.debug("Initialising coordinator");
+
         final EnumSet<DiscoveryMode> discoveryModes = DiscoveryMode.ALL;
 
         zigbeeApi = new ZigBeeApi(networkInterface, panId, channelId, false, discoveryModes);
@@ -232,18 +236,15 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
     protected void browsingComplete() {
         updateStatus(ThingStatus.ONLINE);
 
-        logger.debug("ZigBee network [{}] READY. Found {} nodes.", this.thing.getUID(), zigbeeApi.getDevices().size());
+        logger.debug("ZigBee network [{}] READY. Found {} nodes.", this.thing.getUID(), zigbeeApi.getNodes().size());
 
-        final List<Device> devices = zigbeeApi.getDevices();
-        for (int i = 0; i < devices.size(); i++) {
-            final Device device = devices.get(i);
-            logger.debug("ZigBee '{}' device at address {}", device.getDeviceType(), device.getEndpointId());
-
-            addNewDevice(device);
+        final List<ZigBeeNode> nodes = zigbeeApi.getNodes();
+        for (ZigBeeNode node : nodes) {
+            addNewNode(node);
         }
 
         // Add a listener for any new devices
-        zigbeeApi.addDeviceListener(this);
+        zigbeeApi.addNodeListener(this);
     }
 
     private Device getDeviceByIndexOrEndpointId(ZigBeeApi zigbeeApi, String deviceIdentifier) {
@@ -280,14 +281,13 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
         try {
             return attribute.getValue();
         } catch (ZigBeeClusterException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             return null;
         }
     }
 
     public <T extends Cluster> Attribute openAttribute(String zigbeeAddress, Class<T> clusterId,
-            AttributeDescriptor attributeId, ZigBeeEventListener listener) {
+            AttributeDescriptor attributeId, ReportListener listener) {
         final Device device = getDeviceByIndexOrEndpointId(zigbeeApi, zigbeeAddress);
         Cluster cluster = device.getCluster(clusterId);
         if (cluster == null) {
@@ -299,14 +299,14 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
         }
 
         if (listener != null) {
-            attribute.getReporter().addReportListener((ReportListener) listener, false);
+            attribute.getReporter().addReportListener(listener, false);
         }
         return attribute;
     }
 
-    public void closeAttribute(Attribute attribute, ZigBeeEventListener listener) {
+    public void closeAttribute(Attribute attribute, ReportListener listener) {
         if (attribute != null && listener != null) {
-            attribute.getReporter().removeReportListener((ReportListener) listener, false);
+            attribute.getReporter().removeReportListener(listener, false);
         }
     }
 
@@ -321,7 +321,7 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
 
     /**
      * Returns a list of all known devices
-     * 
+     *
      * @return list of devices
      */
     public List<Device> getDeviceList() {
@@ -329,15 +329,13 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
     }
 
     public void startDeviceDiscovery() {
-        final List<Device> devices = zigbeeApi.getDevices();
-        for (int i = 0; i < devices.size(); i++) {
-            final Device device = devices.get(i);
-            logger.debug("ZigBee '{}' device at address {}", device.getDeviceType(), device.getEndpointId());
-            addNewDevice(device);
+        final List<ZigBeeNode> nodes = zigbeeApi.getNodes();
+        for (ZigBeeNode node : nodes) {
+            addNewNode(node);
         }
 
-        // Allow devices to join for 180 seconds
-        zigbeeApi.permitJoin(180);
+        // Allow devices to join for 60 seconds
+        zigbeeApi.permitJoin(60);
 
         // ZigBeeDiscoveryManager discoveryManager = zigbeeApi.getZigBeeDiscoveryManager();
         // discoveryManager.
@@ -345,7 +343,7 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
 
     /**
      * Adds a device listener to receive updates on device status
-     * 
+     *
      * @param listener
      */
     public void addDeviceListener(DeviceListener listener) {
@@ -354,84 +352,117 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
 
     /**
      * Removes a device listener to receive updates on device status
-     * 
+     *
      * @param listener
      */
     public void removeDeviceListener(DeviceListener listener) {
         zigbeeApi.removeDeviceListener(listener);
     }
 
+    /*
+     * @Override
+     * public void deviceAdded(Device device) {
+     * logger.debug("Device ADDED: '{}' {} {}", device.getDeviceType(), device.getEndpointId(), device.getProfileId());
+     *
+     * addNewDevice(device);
+     * }
+     *
+     * @Override
+     * public void deviceUpdated(Device device) {
+     * logger.debug("Device UPDATED: '{}' {} {}", device.getDeviceType(), device.getEndpointId(),
+     * device.getProfileId());
+     *
+     * ZigBeeEventListener listener = eventListeners.get(device.getEndpointId());
+     * if (listener != null) {
+     * listener.onEndpointStateChange();
+     * }
+     * }
+     *
+     * @Override
+     * public void deviceRemoved(Device device) {
+     * logger.debug("Device REMOVED: '{}' {} {}", device.getDeviceType(), device.getEndpointId(),
+     * device.getProfileId());
+     *
+     * ZigBeeEventListener listener = eventListeners.get(device.getEndpointId());
+     * if (listener != null) {
+     * listener.closeDevice();
+     * }
+     * }
+     */
+
+    /**
+     * Adds a new device to the network.
+     * This starts a thread to read information about the device so we can
+     * create the thingType, and the label for the user.
+     *
+     * @param device
+     */
+    private void addNewNode(ZigBeeNode node) {
+        DiscoveryThread discover = new DiscoveryThread();
+        discover.run(node);
+    }
+
+    private class DiscoveryThread extends Thread {
+        public void run(ZigBeeNode node) {
+            logger.debug("Node Discovery: {}", node.getIeeeAddress());
+
+            // Get the list of endpoints found on this node
+            List<ZigBeeEndpoint> endpoints = zigbeeApi.getNodeEndpoints(node);
+
+            // Is it valid?
+            if (endpoints == null || endpoints.size() == 0) {
+                logger.warn("Node has no endpoints: {}", node.getIeeeAddress());
+                return;
+            }
+
+            // Create a list of devices for the discovery service to work with
+            List<Device> devices = new ArrayList<Device>();
+            for (ZigBeeEndpoint endpoint : endpoints) {
+                Device device = zigbeeApi.getDevice(endpoint.getEndpointId());
+                if (device != null) {
+                    devices.add(device);
+                    logger.debug("Node {} is {}", device.getIeeeAddress(), device.getDeviceType());
+                }
+            }
+
+            // Make sure we found some devices!
+            if (devices.size() == 0) {
+                logger.warn("Node has no devices: {}", node.getIeeeAddress());
+                return;
+            }
+
+            // Use the first device to get the device information required to
+            // define a thingType and description
+            String manufacturer = (String) readAttribute(devices.get(0), 0, 4);
+            String model = (String) readAttribute(devices.get(0), 0, 5);
+
+            // Signal to the handlers that they are known...
+            // ZigBeeEventListener listener = eventListeners.get(device.getEndpointId());
+            // if (listener != null) {
+            // if (listener.openDevice()) {
+            // listener.onEndpointStateChange();
+            // }
+            // }
+
+            discoveryService.addThing(node, devices, manufacturer, model);
+        }
+    }
+
     @Override
-    public void handleCommand(ChannelUID channelUID, Command command) {
+    public void nodeAdded(ZigBeeNode node) {
         // TODO Auto-generated method stub
 
     }
 
     @Override
-    public void deviceAdded(Device device) {
-        logger.debug("Device ADDED: '{}' {} {}", device.getDeviceType(), device.getEndpointId(), device.getProfileId());
+    public void nodeDiscovered(ZigBeeNode node) {
+        // TODO Auto-generated method stub
 
-        addNewDevice(device);
     }
 
     @Override
-    public void deviceUpdated(Device device) {
-        logger.debug("Device UPDATED: '{}' {} {}", device.getDeviceType(), device.getEndpointId(),
-                device.getProfileId());
+    public void nodeRemoved(ZigBeeNode node) {
+        // TODO Auto-generated method stub
 
-        ZigBeeEventListener listener = eventListeners.get(device.getEndpointId());
-        if (listener != null) {
-            listener.onEndpointStateChange();
-        }
-    }
-
-    @Override
-    public void deviceRemoved(Device device) {
-        logger.debug("Device REMOVED: '{}' {} {}", device.getDeviceType(), device.getEndpointId(),
-                device.getProfileId());
-
-        ZigBeeEventListener listener = eventListeners.get(device.getEndpointId());
-        if (listener != null) {
-            listener.closeDevice();
-        }
-    }
-
-    /**
-     * Adds a new device to the network.
-     * This starts a thread to read information about the device so we can
-     * present this information to the user.
-     * 
-     * @param device
-     */
-    private void addNewDevice(Device device) {
-        DiscoveryThread discover = new DiscoveryThread();
-        discover.run(device);
-    }
-
-    private class DiscoveryThread extends Thread {
-        public void run(Device device) {
-            logger.debug("Device Discovery: '{}' {} {}", device.getDeviceType(), device.getEndpointId(),
-                    device.getProfileId());
-
-            String description = null;
-            Object manufacturer = readAttribute(device, 0, 4); // Manufacturer
-            if (manufacturer != null) {
-                description = manufacturer.toString();
-                Object model = readAttribute(device, 0, 5); // Model
-                if (model != null) {
-                    description = manufacturer.toString().trim() + ":" + model.toString().trim();
-                }
-            }
-
-            // Signal to the handlers that they are known...
-            ZigBeeEventListener listener = eventListeners.get(device.getEndpointId());
-            if (listener != null) {
-                if (listener.openDevice()) {
-                    listener.onEndpointStateChange();
-                }
-            }
-
-            discoveryService.deviceAdded(device, description);
-        }
     }
 }

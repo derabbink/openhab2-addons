@@ -7,15 +7,7 @@
  */
 package org.openhab.binding.zigbee.handler;
 
-import static org.openhab.binding.zigbee.ZigBeeBindingConstants.*;
-import gnu.io.CommPort;
-import gnu.io.CommPortIdentifier;
-import gnu.io.NoSuchPortException;
-import gnu.io.PortInUseException;
-import gnu.io.SerialPort;
-import gnu.io.SerialPortEvent;
-import gnu.io.SerialPortEventListener;
-import gnu.io.UnsupportedCommOperationException;
+import static org.openhab.binding.zigbee.ZigBeeBindingConstants.PARAMETER_PORT;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,14 +26,23 @@ import org.eclipse.smarthome.core.types.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gnu.io.CommPort;
+import gnu.io.CommPortIdentifier;
+import gnu.io.NoSuchPortException;
+import gnu.io.PortInUseException;
+import gnu.io.SerialPort;
+import gnu.io.SerialPortEvent;
+import gnu.io.SerialPortEventListener;
+import gnu.io.UnsupportedCommOperationException;
+
 /**
  * The {@link ZigBeeCoordinatorCC2530Handler} is responsible for handling
  * commands, which are sent to one of the channels.
- * 
+ *
  * @author Chris Jackson - Initial contribution
  */
-public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler implements ZigBeePort,
-        SerialPortEventListener {
+public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler
+        implements ZigBeePort, SerialPortEventListener {
     private String portId;
 
     private Logger logger = LoggerFactory.getLogger(ZigBeeCoordinatorCC2530Handler.class);
@@ -144,7 +145,7 @@ public class ZigBeeCoordinatorCC2530Handler extends ZigBeeCoordinatorHandler imp
         try {
             inputStream = serialPort.getInputStream();
             outputStream = serialPort.getOutputStream();
-            
+
             // Write the 'magic byte'
             // Note that this might change in future, or with different dongles
             outputStream.write(0xef);

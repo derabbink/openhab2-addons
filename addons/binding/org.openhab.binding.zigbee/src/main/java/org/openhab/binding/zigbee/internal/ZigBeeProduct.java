@@ -21,15 +21,11 @@ public class ZigBeeProduct {
     }
 
     public boolean match(String manufacturer, String model) {
-        if (this.manufacturer.equals(manufacturer)) {
-            return false;
+        if (this.manufacturer.equals(manufacturer) && this.model.equals(model)) {
+            return true;
         }
 
-        if (this.model.equals(model)) {
-            return false;
-        }
-
-        return true;
+        return false;
     }
 
     public ThingTypeUID getThingTypeUID() {

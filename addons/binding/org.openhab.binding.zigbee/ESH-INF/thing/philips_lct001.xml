@@ -3,20 +3,24 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
         xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
-	<thing-type id="generic_colorlight">
+	<thing-type id="philips_lct001">
 		<label>Generic ZigBee Color Light</label>
 		<description></description>
 		<channels>
 			<channel id="color-1" typeId="color">
 				<label>Light Color</label>
 				<properties>
-                    <property name="binding:*:HSBType">11:0300</property>
-                    <property name="binding:*:PercentType">11:0008</property>
-                    <property name="binding:*:OnOffType">11:0006</property>
+                    <property name="binding:*:HSBType">11:Color</property>
+                    <property name="binding:*:PercentType">11:Level</property>
+                    <property name="binding:*:OnOffType">11:OnOff</property>
 				</properties>
 			</channel>
 			<channel id="color-temperature" typeId="color-temperature">
 				<label>White Temperature</label>
+                <properties>
+                    <property name="binding:*:PercentType">11:ColorTemperature</property>
+                    <property name="binding:*:OnOffType">11:OnOff</property>
+                </properties>
 			</channel>
 		</channels>
 		<properties>

@@ -6,55 +6,76 @@ import org.bubblecloud.zigbee.api.ZigBeeDeviceException;
 import org.bubblecloud.zigbee.api.cluster.general.OnOff;
 import org.bubblecloud.zigbee.api.cluster.impl.api.core.Attribute;
 import org.bubblecloud.zigbee.api.cluster.impl.api.core.ReportListener;
+import org.bubblecloud.zigbee.api.cluster.impl.api.core.ZigBeeClusterException;
+import org.bubblecloud.zigbee.api.cluster.impl.attribute.Attributes;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.library.types.PercentType;
 import org.eclipse.smarthome.core.types.Command;
-import org.eclipse.smarthome.core.types.State;
-import org.openhab.binding.zigbee.handler.ZigBeeCoordinatorHandler;
-import org.openhab.binding.zigbee.handler.ZigBeeThingHandler;
-import org.openhab.binding.zigbee.handler.ZigBeeThingHandler.ZigBeeThingChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ZigBeeOnOffSwitchConverter extends ZigBeeClusterConverter implements ReportListener {
-    private Logger logger = LoggerFactory.getLogger(ZigBeeClusterConverter.class);
+public class ZigBeeOnOffSwitchConverter extends ZigBeeConverter implements ReportListener {
+    private Logger logger = LoggerFactory.getLogger(ZigBeeConverter.class);
 
     private OnOffType currentOnOff = OnOffType.OFF;
     private Attribute attrOnOff;
     private OnOff clusOnOff;
 
-    @Override
-    public boolean initializeConverter(ZigBeeThingHandler thing, ZigBeeThingChannel channel,
-            ZigBeeCoordinatorHandler coordinator) {
-        super.initializeConverter(thing, channel, coordinator);
+    private boolean initialised = false;
 
-        // attrOnOff = coordinator.openAttribute(channel.getAddress(), OnOff.class, Attributes.ON_OFF, this);
+    private void initialise() {
+        if (initialised == true) {
+            return;
+        }
+
+        attrOnOff = coordinator.openAttribute(channel.getAddress(), OnOff.class, Attributes.ON_OFF, this);
         clusOnOff = coordinator.openCluster(channel.getAddress(), OnOff.class);
         if (attrOnOff == null || clusOnOff == null) {
             logger.error("Error opening device on/off controls {}", channel.getAddress());
-            return false;
         }
 
-        return true;
+        try {
+            Object value = attrOnOff.getValue();
+            if (value != null && (boolean) value == true) {
+                updateChannelState(OnOffType.ON);
+            } else {
+                updateChannelState(OnOffType.OFF);
+            }
+        } catch (ZigBeeClusterException e) {
+            e.printStackTrace();
+        }
+
+        initialised = true;
     }
 
     @Override
     public void disposeConverter() {
-        // coordinator.closeAttribute(attrOnOff, this);
-        coordinator.closeCluster(clusOnOff);
+        if (attrOnOff != null) {
+            coordinator.closeAttribute(attrOnOff, this);
+        }
+        if (clusOnOff != null) {
+            coordinator.closeCluster(clusOnOff);
+        }
     }
 
     @Override
     public void handleRefresh() {
-    }
-
-    @Override
-    public State handleEvent(Dictionary<Attribute, Object> reports) {
-        return null;
+        try {
+            Object value = attrOnOff.getValue();
+            if (value != null && (boolean) value == true) {
+                updateChannelState(OnOffType.ON);
+            } else {
+                updateChannelState(OnOffType.OFF);
+            }
+        } catch (ZigBeeClusterException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void handleCommand(Command command) {
+        initialise();
+
         if (command instanceof PercentType) {
             if (((PercentType) command).intValue() == 0) {
                 currentOnOff = OnOffType.OFF;

@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -24,24 +23,16 @@ import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
-import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.zigbee.ZigBeeBindingConstants;
-import org.openhab.binding.zigbee.converter.ZigBeeClusterConverter;
+import org.openhab.binding.zigbee.converter.ZigBeeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Sets;
-
 public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener {
-
-    public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets.newHashSet();
-
-    private static final int DIM_STEPSIZE = 30;
-
     private List<ZigBeeThingChannel> thingChannelsCmd;
     private List<ZigBeeThingChannel> thingChannelsState;
     private List<ZigBeeThingChannel> thingChannelsPoll;
@@ -60,8 +51,14 @@ public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener
 
     @Override
     public void initialize() {
-        logger.debug("Initializing ZigBee thing handler.");
+    }
+
+    @Override
+    protected void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
+        coordinatorHandler = (ZigBeeCoordinatorHandler) thingHandler;
+
         final String configAddress = (String) getConfig().get(ZigBeeBindingConstants.PARAMETER_MACADDRESS);
+        logger.debug("Initializing ZigBee thing handler {}.", configAddress);
         nodeAddress = configAddress;
 
         // Until we get an update put the Thing into initialisation state
@@ -113,7 +110,6 @@ public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener
                     }
 
                     int endpointId = Integer.parseInt(ccSplit[0]);
-                    int clusterId = Integer.parseInt(ccSplit[1], 16);
 
                     // Get the data type
                     DataType dataType = DataType.DecimalType;
@@ -124,7 +120,7 @@ public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener
                     }
 
                     String address = nodeAddress + "/" + endpointId;
-                    ZigBeeThingChannel chan = new ZigBeeThingChannel(channel.getUID(), dataType, address, clusterId,
+                    ZigBeeThingChannel chan = new ZigBeeThingChannel(channel.getUID(), dataType, address, ccSplit[1],
                             argumentMap);
 
                     // First time round, and this is a command - then add the command
@@ -139,6 +135,11 @@ public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener
                         if (first == true) {
                             thingChannelsState.add(chan);
                         }
+                    }
+
+                    // Initialise the converter
+                    if (chan.converter != null) {
+                        chan.converter.initializeConverter(this, chan, coordinatorHandler);
                     }
 
                     first = false;
@@ -165,17 +166,6 @@ public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener
         };
 
         pollingJob = scheduler.scheduleAtFixedRate(pollingRunnable, 60, 60, TimeUnit.SECONDS);
-    }
-
-    @Override
-    protected void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
-        coordinatorHandler = (ZigBeeCoordinatorHandler) thingHandler;
-
-        if (nodeAddress != null) {
-            if (coordinatorHandler != null) {
-                // coordinatorHandler.subscribeEvents(nodeAddress, this);
-            }
-        }
     }
 
     @Override
@@ -263,12 +253,12 @@ public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener
     public class ZigBeeThingChannel {
         ChannelUID uid;
         String address;
-        Integer cluster;
-        ZigBeeClusterConverter converter;
+        String cluster;
+        ZigBeeConverter converter;
         DataType dataType;
         Map<String, String> arguments;
 
-        ZigBeeThingChannel(ChannelUID uid, DataType dataType, String address, Integer cluster,
+        ZigBeeThingChannel(ChannelUID uid, DataType dataType, String address, String cluster,
                 Map<String, String> arguments) {
             this.uid = uid;
             this.arguments = arguments;
@@ -277,7 +267,7 @@ public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener
             this.dataType = dataType;
 
             // Get the converter
-            this.converter = ZigBeeClusterConverter.getConverter(cluster);
+            this.converter = ZigBeeConverter.getConverter(cluster);
             if (this.converter == null) {
                 logger.warn("No converter for {}, cluster {}", uid, cluster);
             }
@@ -287,7 +277,7 @@ public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener
             return uid;
         }
 
-        public Integer getCluster() {
+        public String getCluster() {
             return cluster;
         }
 
