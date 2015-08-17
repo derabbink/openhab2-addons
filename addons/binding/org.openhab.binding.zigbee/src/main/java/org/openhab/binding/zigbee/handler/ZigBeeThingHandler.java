@@ -39,7 +39,7 @@ public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener
 
     private String nodeAddress;
 
-    private Logger logger = LoggerFactory.getLogger(ZigBeeEventListener.class);
+    private Logger logger = LoggerFactory.getLogger(ZigBeeThingHandler.class);
 
     private ZigBeeCoordinatorHandler coordinatorHandler;
 

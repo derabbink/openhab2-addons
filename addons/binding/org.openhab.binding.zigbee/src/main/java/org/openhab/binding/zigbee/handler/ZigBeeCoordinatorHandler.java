@@ -14,8 +14,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -60,7 +58,8 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
 
     private ZigBeeDiscoveryService discoveryService;
 
-    private ConcurrentMap<String, ZigBeeEventListener> eventListeners = new ConcurrentHashMap<String, ZigBeeEventListener>();
+    // private ConcurrentMap<String, ZigBeeEventListener> eventListeners = new ConcurrentHashMap<String,
+    // ZigBeeEventListener>();
 
     private Logger logger = LoggerFactory.getLogger(ZigBeeCoordinatorHandler.class);
 
@@ -68,13 +67,13 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
         super(coordinator);
     }
 
-    protected void subscribeEvents(String macAddress, ZigBeeEventListener handler) {
-        eventListeners.put(macAddress, handler);
-    }
+    // protected void subscribeEvents(String macAddress, ZigBeeEventListener handler) {
+    // eventListeners.put(macAddress, handler);
+    // }
 
-    protected void unsubscribeEvents(String macAddress, ZigBeeEventListener handler) {
-        eventListeners.remove(macAddress, handler);
-    }
+    // protected void unsubscribeEvents(String macAddress, ZigBeeEventListener handler) {
+    // eventListeners.remove(macAddress, handler);
+    // }
 
     @Override
     public void initialize() {
