@@ -77,32 +77,31 @@ public abstract class ZigBeeConverter {
 
     /**
      *
-     * @param clusterId
+     * @param converterId
      * @return
      */
-    public static ZigBeeConverter getConverter(String clusterId) {
+    public static ZigBeeConverter getConverter(String converterId) {
         if (clusterMap == null) {
             clusterMap = new HashMap<String, Class<? extends ZigBeeConverter>>();
 
-            clusterMap.put("OnOff", ZigBeeOnOffSwitchConverter.class);
-            clusterMap.put("Level", ZigBeeLevelConverter.class);
             clusterMap.put("Color", ZigBeeColorConverter.class);
             clusterMap.put("ColorTemperature", ZigBeeColorTemperatureConverter.class);
+            clusterMap.put("Humidity", ZigBeeHumidityConverter.class);
+            clusterMap.put("Level", ZigBeeLevelConverter.class);
             clusterMap.put("Occupancy", ZigBeeOccupancyConverter.class);
+            clusterMap.put("OnOff", ZigBeeOnOffSwitchConverter.class);
             clusterMap.put("Temperature", ZigBeeTemperatureConverter.class);
         }
 
         Constructor<? extends ZigBeeConverter> constructor;
         try {
-            if (clusterMap.get(clusterId) == null) {
-                logger.warn("Cluster converter {} is not implemented!", String.format("%04X", clusterId));
+            if (clusterMap.get(converterId) == null) {
+                logger.warn("Cluster converter {} is not implemented!", converterId);
                 return null;
             }
-            constructor = clusterMap.get(clusterId).getConstructor();
+            constructor = clusterMap.get(converterId).getConstructor();
             return constructor.newInstance();
-        } catch (
-
-        Exception e) {
+        } catch (Exception e) {
             // logger.error("Command processor error");
         }
 
