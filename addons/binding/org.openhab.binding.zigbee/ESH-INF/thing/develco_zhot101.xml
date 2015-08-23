@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="zigbee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
+	<thing-type id="develco_zhot101">
+		<label>Develco ZHOT101</label>
+		<description>Develco ZHOT101 Occupancy, Temperature and Light Sensor</description>
+		<channels>
+			<channel id="temperature-1" typeId="temperature">
+				<label>Temperature</label>
+				<properties>
+					<property name="binding:State:NumberType">38:Temperature;Scale=0.01</property>
+				</properties>
+			</channel>
+			<channel id="light-1" typeId="light">
+				<label>Light Sensor</label>
+				<properties>
+					<property name="binding:State:NumberType">39:LightSensor</property>
+				</properties>
+			</channel>
+			<channel id="occupancy-1" typeId="occupancy">
+				<label>Light Sensor</label>
+				<properties>
+					<property name="binding:State:NumberType">34:Occupancy</property>
+				</properties>
+			</channel>
+		</channels>
+		<properties>
+			<property name="vendor">Develco</property>
+			<property name="model">ZHOT101</property>
+		</properties>
+	</thing-type>
+</thing:thing-descriptions>

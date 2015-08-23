@@ -9,6 +9,14 @@ package org.openhab.binding.zigbee.handler;
 
 import static org.openhab.binding.zigbee.ZigBeeBindingConstants.*;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -28,6 +36,10 @@ import org.bubblecloud.zigbee.api.cluster.impl.attribute.AttributeDescriptor;
 import org.bubblecloud.zigbee.network.NodeListener;
 import org.bubblecloud.zigbee.network.ZigBeeEndpoint;
 import org.bubblecloud.zigbee.network.ZigBeeNode;
+import org.bubblecloud.zigbee.network.ZigBeeNodeDescriptor;
+import org.bubblecloud.zigbee.network.ZigBeeNodePowerDescriptor;
+import org.bubblecloud.zigbee.network.impl.ZigBeeEndpointImpl;
+import org.bubblecloud.zigbee.network.impl.ZigBeeNodeImpl;
 import org.bubblecloud.zigbee.network.model.DiscoveryMode;
 import org.bubblecloud.zigbee.network.port.ZigBeePort;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
@@ -37,9 +49,18 @@ import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.ThingStatusInfo;
 import org.eclipse.smarthome.core.thing.binding.BaseBridgeHandler;
+import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.openhab.binding.zigbee.discovery.ZigBeeDiscoveryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.converters.ConversionException;
+import com.thoughtworks.xstream.io.xml.PrettyPrintWriter;
+import com.thoughtworks.xstream.io.xml.StaxDriver;
+
+//public String serializeNetworkState() {
+//public void deserializeNetworkState(final String networkState) {
 
 /**
  * The {@link ZigBeeCoordinatorHandler} is responsible for handling commands,
@@ -53,13 +74,11 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
 
     protected ZigBeeApi zigbeeApi = null;
     private ScheduledFuture<?> restartJob = null;
-
     private ZigBeePort networkInterface;
 
     private ZigBeeDiscoveryService discoveryService;
 
-    // private ConcurrentMap<String, ZigBeeEventListener> eventListeners = new ConcurrentHashMap<String,
-    // ZigBeeEventListener>();
+    private String folderName = "userdata/zigbee";
 
     private Logger logger = LoggerFactory.getLogger(ZigBeeCoordinatorHandler.class);
 
@@ -67,20 +86,26 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
         super(coordinator);
     }
 
-    // protected void subscribeEvents(String macAddress, ZigBeeEventListener handler) {
-    // eventListeners.put(macAddress, handler);
-    // }
-
-    // protected void unsubscribeEvents(String macAddress, ZigBeeEventListener handler) {
-    // eventListeners.remove(macAddress, handler);
-    // }
-
     @Override
     public void initialize() {
         logger.debug("Initializing ZigBee network [{}].", this.thing.getUID());
 
         panId = ((BigDecimal) getConfig().get(PARAMETER_PANID)).intValue();
         channelId = ((BigDecimal) getConfig().get(PARAMETER_CHANNEL)).intValue();
+
+        final String USERDATA_DIR_PROG_ARGUMENT = "smarthome.userdata";
+        final String eshUserDataFolder = System.getProperty(USERDATA_DIR_PROG_ARGUMENT);
+        if (eshUserDataFolder != null) {
+            folderName = eshUserDataFolder + "/zigbee";
+        }
+
+        final File folder = new File(folderName);
+
+        // create path for serialization.
+        if (!folder.exists()) {
+            logger.debug("Creating directory {}", folderName);
+            folder.mkdirs();
+        }
     }
 
     @Override
@@ -156,11 +181,22 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
             zigbeeApi = null;
 
             restartZigBeeNetwork();
-        } else {
-            logger.debug("ZigBee network [{}] started", this.thing.getUID());
 
-            waitForNetwork();
+            return;
         }
+
+        logger.debug("ZigBee network [{}] started", this.thing.getUID());
+
+        final XStream stream = new XStream(new StaxDriver());
+
+        final List<ZigBeeEndpoint> endpoints = new ArrayList<ZigBeeEndpoint>();
+        for (final ZigBeeNode node : zigbeeApi.getNodes()) {
+            for (final ZigBeeEndpoint endpoint : zigbeeApi.getNodeEndpoints(node)) {
+                endpoints.add(endpoint);
+            }
+        }
+        waitForNetwork();
+
     }
 
     /**
@@ -230,7 +266,7 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
     }
 
     /**
-     * Called after initial browsing is complete. At this point we're good to go
+     * Called after initial browsing is complete. At this point we're good to go...
      */
     protected void browsingComplete() {
         updateStatus(ThingStatus.ONLINE);
@@ -244,6 +280,16 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
 
         // Add a listener for any new devices
         zigbeeApi.addNodeListener(this);
+
+        // Notify all our things...
+        logger.debug("Bridge connection open. Updating thing status to ONLINE.");
+        // now also re-initialize all light handlers
+        for (Thing thing : getThing().getThings()) {
+            ThingHandler handler = thing.getHandler();
+            if (handler != null) {
+                handler.initialize();
+            }
+        }
     }
 
     private Device getDeviceByIndexOrEndpointId(ZigBeeApi zigbeeApi, String deviceIdentifier) {
@@ -288,6 +334,9 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
     public <T extends Cluster> Attribute openAttribute(String zigbeeAddress, Class<T> clusterId,
             AttributeDescriptor attributeId, ReportListener listener) {
         final Device device = getDeviceByIndexOrEndpointId(zigbeeApi, zigbeeAddress);
+        if (device == null) {
+            return null;
+        }
         Cluster cluster = device.getCluster(clusterId);
         if (cluster == null) {
             return null;
@@ -358,37 +407,6 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
         zigbeeApi.removeDeviceListener(listener);
     }
 
-    /*
-     * @Override
-     * public void deviceAdded(Device device) {
-     * logger.debug("Device ADDED: '{}' {} {}", device.getDeviceType(), device.getEndpointId(), device.getProfileId());
-     *
-     * addNewDevice(device);
-     * }
-     *
-     * @Override
-     * public void deviceUpdated(Device device) {
-     * logger.debug("Device UPDATED: '{}' {} {}", device.getDeviceType(), device.getEndpointId(),
-     * device.getProfileId());
-     *
-     * ZigBeeEventListener listener = eventListeners.get(device.getEndpointId());
-     * if (listener != null) {
-     * listener.onEndpointStateChange();
-     * }
-     * }
-     *
-     * @Override
-     * public void deviceRemoved(Device device) {
-     * logger.debug("Device REMOVED: '{}' {} {}", device.getDeviceType(), device.getEndpointId(),
-     * device.getProfileId());
-     *
-     * ZigBeeEventListener listener = eventListeners.get(device.getEndpointId());
-     * if (listener != null) {
-     * listener.closeDevice();
-     * }
-     * }
-     */
-
     /**
      * Adds a new device to the network.
      * This starts a thread to read information about the device so we can
@@ -447,21 +465,138 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
         }
     }
 
+    private XStream createXStream() {
+        XStream stream = new XStream(new StaxDriver());
+
+        stream.alias("Endpoint", ZigBeeEndpointImpl.class);
+        stream.alias("Node", ZigBeeNodeImpl.class);
+        stream.alias("NodeDescriptor", ZigBeeNodeDescriptor.class);
+        stream.alias("PowerDescriptor", ZigBeeNodePowerDescriptor.class);
+        stream.setClassLoader(ZigBeeEndpointImpl.class.getClassLoader());
+        // stream.addImplicitCollection(ZigBeeNodeDescriptor.class, "macCapabilities");
+
+        return stream;
+    }
+
+    private void serializeNode(ZigBeeNode node) {
+        // Create a copy of the node for serialization
+        ZigBeeNodeImpl node2 = new ZigBeeNodeImpl();
+        node2.setIeeeAddress(node.getIeeeAddress());
+        node2.setNetworkAddress(node.getNetworkAddress());
+        node2.setNodeDescriptor(node.getNodeDescriptor());
+        node2.setPowerDescriptor(node.getPowerDescriptor());
+
+        final List<ZigBeeEndpoint> endpoints = new ArrayList<ZigBeeEndpoint>();
+        for (final ZigBeeEndpoint endpoint : zigbeeApi.getNodeEndpoints(node)) {
+            ZigBeeEndpointImpl endpoint2 = new ZigBeeEndpointImpl();
+            endpoint2.setNode(node2);
+            endpoint2.setDeviceTypeId(endpoint.getDeviceTypeId());
+            endpoint2.setProfileId(endpoint.getProfileId());
+            endpoint2.setDeviceVersion(endpoint.getDeviceVersion());
+            endpoint2.setEndPointAddress(endpoint.getEndPointAddress());
+            endpoint2.setInputClusters(endpoint.getInputClusters());
+            endpoint2.setOutputClusters(endpoint.getOutputClusters());
+            endpoint2.setEndpointId(endpoint.getEndpointId());
+
+            endpoints.add(endpoint2);
+        }
+
+        final XStream stream = createXStream();
+
+        File file = new File(this.folderName, node.getIeeeAddress() + ".xml");
+        BufferedWriter writer = null;
+
+        try {
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
+            stream.marshal(endpoints, new PrettyPrintWriter(writer));
+            writer.flush();
+        } catch (IOException e) {
+            logger.error("{}: Error serializing network to file: {}", this.thing.getUID(), e.getMessage());
+        } finally {
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+    }
+
+    public void deserializeNode(String address) {
+        File file = new File(this.folderName, address + ".xml");
+        BufferedReader reader = null;
+
+        logger.debug("{}: Serializing from file {}", address, file.getPath());
+
+        if (!file.exists()) {
+            logger.debug("{}: Error serializing from file: file does not exist.", address);
+            return;
+        }
+
+        try {
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+            final XStream stream = createXStream();
+            @SuppressWarnings("unchecked")
+            Object xxx = stream.fromXML(reader);
+            final List<ZigBeeEndpoint> endpoints = (List<ZigBeeEndpoint>) xxx;
+
+            for (final ZigBeeEndpoint endpoint : endpoints) {
+                // Check if the node is existing
+                ZigBeeNodeImpl existingNode = zigbeeApi.getZigBeeNetwork().getNode(endpoint.getNode().getIeeeAddress());
+                if (existingNode == null) {
+                    zigbeeApi.getZigBeeNetwork().addNode((ZigBeeNodeImpl) endpoint.getNode());
+                } else {
+                    ((ZigBeeEndpointImpl) endpoint).setNode(existingNode);
+                }
+
+                // Check if the endpoint is existing
+
+                ((ZigBeeEndpointImpl) endpoint).setNetworkManager(zigbeeApi.getZigBeeNetworkManager());
+                zigbeeApi.getZigBeeNetwork().addEndpoint(endpoint);
+            }
+
+        } catch (IOException e) {
+            logger.error("{}: Error serializing from file: {}", address, e.getMessage());
+        } catch (ConversionException e) {
+            logger.error("{}: Error serializing from file: {}", address, e.getMessage());
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+        return;
+    }
+
     @Override
     public void nodeAdded(ZigBeeNode node) {
-        // TODO Auto-generated method stub
-
+        logger.debug("Node is added to network: {}", node.getIeeeAddress());
     }
 
     @Override
     public void nodeDiscovered(ZigBeeNode node) {
-        // TODO Auto-generated method stub
+        logger.debug("Node discovery complete: {}", node.getIeeeAddress());
+        addNewNode(node);
 
+        serializeNode(node);
+    }
+
+    @Override
+    public void nodeUpdated(ZigBeeNodeImpl node) {
+        logger.debug("Node updated: {}", node.getIeeeAddress());
+        serializeNode(node);
     }
 
     @Override
     public void nodeRemoved(ZigBeeNode node) {
-        // TODO Auto-generated method stub
+        logger.debug("Node removed: {}", node.getIeeeAddress());
+        // TODO Remove the XML ??
+        // serializeNetwork();
+    }
 
+    public Device getDevice(String endPointId) {
+        return zigbeeApi.getDevice(endPointId);
     }
 }

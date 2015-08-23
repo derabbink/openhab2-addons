@@ -15,8 +15,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.bubblecloud.zigbee.network.NodeListener;
-import org.bubblecloud.zigbee.network.ZigBeeNode;
 import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Channel;
@@ -32,7 +30,7 @@ import org.openhab.binding.zigbee.converter.ZigBeeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener {
+public class ZigBeeThingHandler extends BaseThingHandler {
     private List<ZigBeeThingChannel> thingChannelsCmd;
     private List<ZigBeeThingChannel> thingChannelsState;
     private List<ZigBeeThingChannel> thingChannelsPoll;
@@ -51,15 +49,17 @@ public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener
 
     @Override
     public void initialize() {
-    }
-
-    @Override
-    protected void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
-        coordinatorHandler = (ZigBeeCoordinatorHandler) thingHandler;
+        // If the bridgeHandler hasn't initialised yet, then return
+        if (coordinatorHandler == null) {
+            return;
+        }
 
         final String configAddress = (String) getConfig().get(ZigBeeBindingConstants.PARAMETER_MACADDRESS);
         logger.debug("Initializing ZigBee thing handler {}.", configAddress);
         nodeAddress = configAddress;
+
+        //
+        coordinatorHandler.deserializeNode(nodeAddress);
 
         // Until we get an update put the Thing into initialisation state
         updateStatus(ThingStatus.INITIALIZING);
@@ -104,7 +104,7 @@ public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener
                 for (String cc : clusters) {
                     String[] ccSplit = cc.split(":");
 
-                    // The cluster must be "endpoint:cluster"
+                    // The cluster must be "endpoint:converter"
                     // Endpoint is decimal, cluster is hex
                     if (ccSplit.length != 2) {
                     }
@@ -139,7 +139,10 @@ public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener
 
                     // Initialise the converter
                     if (chan.converter != null) {
-                        chan.converter.initializeConverter(this, chan, coordinatorHandler);
+                        chan.converter.createConverter(this, chan, coordinatorHandler);
+
+                        // And initialise it...
+                        chan.converter.initializeConverter();
                     }
 
                     first = false;
@@ -168,6 +171,12 @@ public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener
         pollingJob = scheduler.scheduleAtFixedRate(pollingRunnable, 60, 60, TimeUnit.SECONDS);
     }
 
+    // @Override
+    @Override
+    protected void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
+        coordinatorHandler = (ZigBeeCoordinatorHandler) thingHandler;
+    }
+
     @Override
     public void dispose() {
         logger.debug("Handler disposes. Unregistering listener.");
@@ -191,6 +200,10 @@ public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
+        if (thingChannelsCmd == null) {
+            logger.warn("No commands for channel {}.", channelUID);
+            return;
+        }
         if (coordinatorHandler == null) {
             logger.warn("Coordinator handler not found. Cannot handle command without coordinator.");
             updateStatus(ThingStatus.OFFLINE);
@@ -230,24 +243,6 @@ public class ZigBeeThingHandler extends BaseThingHandler implements NodeListener
 
     public void setChannelState(ChannelUID channel, State state) {
         updateState(channel, state);
-    }
-
-    @Override
-    public void nodeAdded(ZigBeeNode node) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void nodeDiscovered(ZigBeeNode node) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void nodeRemoved(ZigBeeNode node) {
-        // TODO Auto-generated method stub
-
     }
 
     public class ZigBeeThingChannel {

@@ -43,7 +43,7 @@ public abstract class ZigBeeConverter {
         super();
     }
 
-    public boolean initializeConverter(ZigBeeThingHandler thing, ZigBeeThingChannel channel,
+    public boolean createConverter(ZigBeeThingHandler thing, ZigBeeThingChannel channel,
             ZigBeeCoordinatorHandler coordinator) {
         this.thing = thing;
         this.channel = channel;
@@ -51,6 +51,8 @@ public abstract class ZigBeeConverter {
 
         return true;
     }
+
+    public abstract void initializeConverter();
 
     public void disposeConverter() {
     }
@@ -73,10 +75,6 @@ public abstract class ZigBeeConverter {
     public void handleCommand(Command command) {
     }
 
-    public int getRefreshInterval() {
-        return 0;
-    }
-
     /**
      *
      * @param clusterId
@@ -90,6 +88,8 @@ public abstract class ZigBeeConverter {
             clusterMap.put("Level", ZigBeeLevelConverter.class);
             clusterMap.put("Color", ZigBeeColorConverter.class);
             clusterMap.put("ColorTemperature", ZigBeeColorTemperatureConverter.class);
+            clusterMap.put("Occupancy", ZigBeeOccupancyConverter.class);
+            clusterMap.put("Temperature", ZigBeeTemperatureConverter.class);
         }
 
         Constructor<? extends ZigBeeConverter> constructor;

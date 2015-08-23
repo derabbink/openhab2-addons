@@ -22,7 +22,8 @@ public class ZigBeeLevelConverter extends ZigBeeConverter implements ReportListe
 
     private boolean initialised = false;
 
-    private void initialise() {
+    @Override
+    public void initializeConverter() {
         if (initialised == true) {
             return;
         }
@@ -62,7 +63,9 @@ public class ZigBeeLevelConverter extends ZigBeeConverter implements ReportListe
 
     @Override
     public void handleCommand(Command command) {
-        initialise();
+        if (initialised == false) {
+            return;
+        }
 
         int level = 0;
         if (command instanceof PercentType) {

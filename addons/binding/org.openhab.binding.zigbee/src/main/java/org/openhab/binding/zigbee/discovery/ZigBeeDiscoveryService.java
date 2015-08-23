@@ -76,10 +76,19 @@ public class ZigBeeDiscoveryService extends AbstractDiscoveryService {
     }
 
     public void addThing(ZigBeeNode node, List<Device> devices, String manufacturer, String model) {
+        if (manufacturer == null || model == null) {
+            return;
+        }
+        String manufacturerSplitter[] = manufacturer.split(" ");
+        String modelSplitter[] = model.split(" ");
+
+        String manufacturerSanatized = manufacturerSplitter[0].replaceAll("[^\\x20-\\x7F]", "");
+        String modelSanatized = modelSplitter[0].replaceAll("[^\\x20-\\x7F]", "");
+
         // Try and find this product in the database
         ZigBeeProduct foundProduct = null;
         for (ZigBeeProduct product : ZigBeeConfigProvider.getProductIndex()) {
-            if (product.match(manufacturer, model) == true) {
+            if (product.match(manufacturerSanatized, modelSanatized) == true) {
                 foundProduct = product;
                 break;
             }
@@ -87,6 +96,7 @@ public class ZigBeeDiscoveryService extends AbstractDiscoveryService {
 
         // Did we find it?
         if (foundProduct == null) {
+            logger.info("Unknown ZigBee device '{}' :: '{}'", manufacturerSplitter[0], modelSplitter[0]);
             // No - the device is unknown to us
             // We need to dynamically create the thing - when this functionality is included in ESH!
 
@@ -112,44 +122,7 @@ public class ZigBeeDiscoveryService extends AbstractDiscoveryService {
 
         thingDiscovered(discoveryResult);
     }
-    /*
-     * public void deviceAdded(Device device, String description) {
-     * logger.debug("Device discovery: '{}' {} {}", device.getDeviceType(), device.getEndpointId(),
-     * device.getProfileId());
-     *
-     * ThingUID thingUID = getThingUID(device);
-     * if (thingUID != null) {
-     * String label = device.getDeviceType();
-     * if (description != null) {
-     * label += "(" + description + ")";
-     * }
-     * ThingUID bridgeUID = coordinatorHandler.getThing().getUID();
-     * Map<String, Object> properties = new HashMap<>(1);
-     * properties.put(ZigBeeBindingConstants.PARAMETER_MACADDRESS, device.getEndpointId());
-     * DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID).withProperties(properties)
-     * .withBridge(bridgeUID).withLabel(label).build();
-     *
-     * thingDiscovered(discoveryResult);
-     * } else {
-     * logger.info("Discovered unknown device type '{}' at address {}", device.getDeviceType(),
-     * device.getEndpointId());
-     * }
-     * }
-     */
 
-    /*
-     * public void deviceUpdated(Device device) {
-     * // Nothing to do here!
-     * }
-     *
-     * public void deviceRemoved(Device device) {
-     * ThingUID thingUID = getThingUID(device);
-     *
-     * if (thingUID != null) {
-     * thingRemoved(thingUID);
-     * }
-     * }
-     */
     @Override
     protected void startBackgroundDiscovery() {
     }

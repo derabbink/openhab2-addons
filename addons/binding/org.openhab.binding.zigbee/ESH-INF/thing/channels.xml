@@ -56,12 +56,47 @@
         </state>
     </channel-type>
 
+    <!-- Occupancy Channel -->
+    <channel-type id="occupancy">
+        <item-type>Switch</item-type>
+        <label>Door Open</label>
+        <description>Indicates if the zone occupancy sensor is active
+        </description>
+        <category>Motion</category>
+        <state pattern="%s" readOnly="true">
+            <options>
+                <option value="ON">Active</option>
+                <option value="OFF">Inactive</option>
+            </options>
+        </state>
+    </channel-type>
+
     <!-- Temperature Channel -->
     <channel-type id="temperature">
         <item-type>Number</item-type>
         <label>Temperature</label>
         <description>Indicates the current temperature</description>
         <category>Temperature</category>
+        <state pattern="%0.1f" readOnly="true">
+        </state>
+    </channel-type>
+
+    <!-- Humidity Channel -->
+    <channel-type id="humidity">
+        <item-type>Number</item-type>
+        <label>Humidity</label>
+        <description>Indicates the current relative humidity</description>
+        <category>Humidity</category>
+        <state pattern="%0.1f" readOnly="true">
+        </state>
+    </channel-type>
+
+    <!-- Light Sensor Channel -->
+    <channel-type id="light">
+        <item-type>Number</item-type>
+        <label>Light Sensor</label>
+        <description>Indicates the current light sensor level</description>
+        <category>Light</category>
         <state pattern="%0.1f" readOnly="true">
         </state>
     </channel-type>

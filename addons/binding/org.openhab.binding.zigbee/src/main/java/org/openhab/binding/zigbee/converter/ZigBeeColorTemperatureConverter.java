@@ -21,10 +21,12 @@ public class ZigBeeColorTemperatureConverter extends ZigBeeConverter implements 
 
     private boolean initialised = false;
 
-    private void initialise() {
+    @Override
+    public void initializeConverter() {
         if (initialised == true) {
             return;
         }
+
         attrColorTemp = coordinator.openAttribute(channel.getAddress(), ColorControl.class,
                 Attributes.COLOR_TEMPERATURE, null);
         clusColor = coordinator.openCluster(channel.getAddress(), ColorControl.class);
@@ -48,7 +50,9 @@ public class ZigBeeColorTemperatureConverter extends ZigBeeConverter implements 
 
     @Override
     public void handleCommand(Command command) {
-        initialise();
+        if (initialised == false) {
+            return;
+        }
 
         PercentType colorTemp = PercentType.ZERO;
         if (command instanceof PercentType) {

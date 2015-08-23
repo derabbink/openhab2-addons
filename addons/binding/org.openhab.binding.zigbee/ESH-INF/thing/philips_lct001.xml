@@ -4,8 +4,8 @@
         xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
         xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
 	<thing-type id="philips_lct001">
-		<label>Generic ZigBee Color Light</label>
-		<description></description>
+		<label>Philips LCT001</label>
+		<description>Philips Hue Bulb</description>
 		<channels>
 			<channel id="color-1" typeId="color">
 				<label>Light Color</label>
@@ -26,7 +26,6 @@
 		<properties>
             <property name="vendor">Philips</property>
             <property name="model">LCT001</property>
-            <property name="applicationVersion">2</property>
         </properties>
 	</thing-type>
 </thing:thing-descriptions>

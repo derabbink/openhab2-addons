@@ -17,9 +17,6 @@
 		<properties>
             <property name="vendor">Unknown</property>
             <property name="model">Unknown</property>
-            <property name="applicationVersion">0131</property>
-            <property name="manufacturerName">0002:0002</property>
-            <property name="modelIdentifier">1</property>
         </properties>
 	</thing-type>
 </thing:thing-descriptions>

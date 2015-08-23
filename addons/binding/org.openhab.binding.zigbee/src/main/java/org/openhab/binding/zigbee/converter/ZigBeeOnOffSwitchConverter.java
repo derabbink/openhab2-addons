@@ -23,7 +23,8 @@ public class ZigBeeOnOffSwitchConverter extends ZigBeeConverter implements Repor
 
     private boolean initialised = false;
 
-    private void initialise() {
+    @Override
+    public void initializeConverter() {
         if (initialised == true) {
             return;
         }
@@ -50,6 +51,10 @@ public class ZigBeeOnOffSwitchConverter extends ZigBeeConverter implements Repor
 
     @Override
     public void disposeConverter() {
+        if (initialised == false) {
+            return;
+        }
+
         if (attrOnOff != null) {
             coordinator.closeAttribute(attrOnOff, this);
         }
@@ -60,6 +65,10 @@ public class ZigBeeOnOffSwitchConverter extends ZigBeeConverter implements Repor
 
     @Override
     public void handleRefresh() {
+        if (initialised == false) {
+            return;
+        }
+
         try {
             Object value = attrOnOff.getValue();
             if (value != null && (boolean) value == true) {
@@ -74,7 +83,9 @@ public class ZigBeeOnOffSwitchConverter extends ZigBeeConverter implements Repor
 
     @Override
     public void handleCommand(Command command) {
-        initialise();
+        if (initialised == false) {
+            return;
+        }
 
         if (command instanceof PercentType) {
             if (((PercentType) command).intValue() == 0) {
@@ -98,6 +109,8 @@ public class ZigBeeOnOffSwitchConverter extends ZigBeeConverter implements Repor
         } catch (ZigBeeDeviceException e) {
             e.printStackTrace();
         }
+
+        // this.thing.updateStatus(ThingStatus.ONLINE);
     }
 
     @Override
