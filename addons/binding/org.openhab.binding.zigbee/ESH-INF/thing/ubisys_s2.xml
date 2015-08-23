@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="zigbee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
+        xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
+	<thing-type id="ubisys_s2">
+		<label>ubisys S2 Switch</label>
+		<description>ubisys S2 Dual Power Switch</description>
+		<channels>
+            <channel id="switch-1" typeId="switch">
+                <label>Switch 1</label>
+                <properties>
+                    <property name="binding:*:OnOffType">1:OnOff</property>
+                </properties>
+            </channel>
+            <channel id="switch-2" typeId="switch">
+                <label>Switch 2</label>
+                <properties>
+                    <property name="binding:*:OnOffType">2:OnOff</property>
+                </properties>
+            </channel>
+            <channel id="frequency-0" typeId="frequency">
+                <label>AC Frequency</label>
+                <properties>
+                    <property name="binding:State:NumberType">5:ElectricalMeasurement;Parameter=ACFrequency,Scale=0.001</property>                    
+                </properties>
+            </channel>
+            <channel id="voltage-0" typeId="voltage">
+                <label>AC Voltage</label>
+                <properties>
+                    <property name="binding:State:NumberType">5:ElectricalMeasurement;Parameter=RMSVoltage</property>                    
+                </properties>
+            </channel>
+            <channel id="current-0" typeId="current">
+                <label>AC Current</label>
+                <properties>
+                    <property name="binding:State:NumberType">5:ElectricalMeasurement;Parameter=RMSCurrent</property>                    
+                </properties>
+            </channel>
+            <channel id="activepower-0" typeId="power">
+                <label>AC Active Power</label>
+                <properties>
+                    <property name="binding:State:NumberType">5:ElectricalMeasurement;Parameter=ActivePower</property>                    
+                </properties>
+            </channel>
+		</channels>
+		<properties>
+            <property name="vendor">ubisys</property>
+            <property name="model">S2</property>
+        </properties>
+	</thing-type>
+</thing:thing-descriptions>
