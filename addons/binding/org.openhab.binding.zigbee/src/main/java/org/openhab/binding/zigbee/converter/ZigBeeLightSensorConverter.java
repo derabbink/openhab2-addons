@@ -11,13 +11,13 @@ import org.bubblecloud.zigbee.api.cluster.impl.api.core.ReportListener;
 import org.bubblecloud.zigbee.api.cluster.impl.api.core.Reporter;
 import org.bubblecloud.zigbee.api.cluster.impl.api.core.ZigBeeClusterException;
 import org.bubblecloud.zigbee.api.cluster.impl.attribute.Attributes;
-import org.bubblecloud.zigbee.api.cluster.measurement_sensing.RelativeHumidityMeasurement;
+import org.bubblecloud.zigbee.api.cluster.measurement_sensing.IlluminanceMeasurement;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.types.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ZigBeeHumidityConverter extends ZigBeeConverter implements ReportListener {
+public class ZigBeeLightSensorConverter extends ZigBeeConverter implements ReportListener {
     private Logger logger = LoggerFactory.getLogger(ZigBeeConverter.class);
 
     private Attribute attrTemperature;
@@ -35,8 +35,7 @@ public class ZigBeeHumidityConverter extends ZigBeeConverter implements ReportLi
             scale = Double.parseDouble(channel.getArguments().get("Scale"));
         }
 
-        // TODO this works, but I think uses the wrong concept!
-        attrTemperature = coordinator.openAttribute(channel.getAddress(), RelativeHumidityMeasurement.class,
+        attrTemperature = coordinator.openAttribute(channel.getAddress(), IlluminanceMeasurement.class,
                 Attributes.CURRENT_LEVEL, this);
         if (attrTemperature == null) {
             logger.error("Error opening attribute {}", channel.getAddress());
@@ -50,7 +49,7 @@ public class ZigBeeHumidityConverter extends ZigBeeConverter implements ReportLi
             logger.warn("{}: Device not found at {}.", channel.getUID(), channel.getAddress());
             return;
         }
-        Cluster cluster = device.getCluster(ZigBeeApiConstants.CLUSTER_ID_RELATIVE_HUMIDITY_MEASUREMENT);
+        Cluster cluster = device.getCluster(ZigBeeApiConstants.CLUSTER_ID_ILLUMINANCE_MEASUREMENT);
         if (cluster != null) {
             Attribute attribute = cluster.getAttribute(0);
             final Reporter reporter = attribute.getReporter();

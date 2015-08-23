@@ -84,13 +84,15 @@ public abstract class ZigBeeConverter {
         if (clusterMap == null) {
             clusterMap = new HashMap<String, Class<? extends ZigBeeConverter>>();
 
+            // Add all the converters into the map...
             clusterMap.put("Color", ZigBeeColorConverter.class);
             clusterMap.put("ColorTemperature", ZigBeeColorTemperatureConverter.class);
-            clusterMap.put("Humidity", ZigBeeHumidityConverter.class);
+            clusterMap.put("HumiditySensor", ZigBeeHumiditySensorConverter.class);
             clusterMap.put("Level", ZigBeeLevelConverter.class);
-            clusterMap.put("Occupancy", ZigBeeOccupancyConverter.class);
+            clusterMap.put("LightSensor", ZigBeeLightSensorConverter.class);
+            clusterMap.put("OccupancySensor", ZigBeeOccupancySensorConverter.class);
             clusterMap.put("OnOff", ZigBeeOnOffSwitchConverter.class);
-            clusterMap.put("Temperature", ZigBeeTemperatureConverter.class);
+            clusterMap.put("TemperatureSensor", ZigBeeTemperatureSensorConverter.class);
         }
 
         Constructor<? extends ZigBeeConverter> constructor;

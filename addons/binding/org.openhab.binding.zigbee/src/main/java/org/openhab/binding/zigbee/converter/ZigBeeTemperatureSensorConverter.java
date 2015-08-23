@@ -1,18 +1,23 @@
 package org.openhab.binding.zigbee.converter;
 
 import java.util.Dictionary;
+import java.util.Enumeration;
 
-import org.bubblecloud.zigbee.api.cluster.general.LevelControl;
+import org.bubblecloud.zigbee.api.Device;
+import org.bubblecloud.zigbee.api.ZigBeeApiConstants;
+import org.bubblecloud.zigbee.api.cluster.Cluster;
 import org.bubblecloud.zigbee.api.cluster.impl.api.core.Attribute;
 import org.bubblecloud.zigbee.api.cluster.impl.api.core.ReportListener;
+import org.bubblecloud.zigbee.api.cluster.impl.api.core.Reporter;
 import org.bubblecloud.zigbee.api.cluster.impl.api.core.ZigBeeClusterException;
 import org.bubblecloud.zigbee.api.cluster.impl.attribute.Attributes;
+import org.bubblecloud.zigbee.api.cluster.measurement_sensing.TemperatureMeasurement;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.types.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ZigBeeOccupancyConverter extends ZigBeeConverter implements ReportListener {
+public class ZigBeeTemperatureSensorConverter extends ZigBeeConverter implements ReportListener {
     private Logger logger = LoggerFactory.getLogger(ZigBeeConverter.class);
 
     private Attribute attrTemperature;
@@ -30,11 +35,29 @@ public class ZigBeeOccupancyConverter extends ZigBeeConverter implements ReportL
             scale = Double.parseDouble(channel.getArguments().get("Scale"));
         }
 
-        attrTemperature = coordinator.openAttribute(channel.getAddress(), LevelControl.class, Attributes.CURRENT_LEVEL,
-                this);
+        attrTemperature = coordinator.openAttribute(channel.getAddress(), TemperatureMeasurement.class,
+                Attributes.CURRENT_LEVEL, this);
         if (attrTemperature == null) {
             logger.error("Error opening attribute {}", channel.getAddress());
             return;
+        }
+
+        initialised = true;
+
+        final Device device = coordinator.getDevice(channel.getAddress());
+        if (device == null) {
+            logger.warn("{}: Device not found at {}.", channel.getUID(), channel.getAddress());
+            return;
+        }
+        Cluster cluster = device.getCluster(ZigBeeApiConstants.CLUSTER_ID_TEMPERATURE_MEASUREMENT);
+        if (cluster != null) {
+            Attribute attribute = cluster.getAttribute(0);
+            final Reporter reporter = attribute.getReporter();
+            if (reporter == null) {
+                logger.warn("{}: Attribute does not provide reports.", channel.getUID());
+            } else {
+                reporter.addReportListener(this, false);
+            }
         }
 
         try {
@@ -46,8 +69,6 @@ public class ZigBeeOccupancyConverter extends ZigBeeConverter implements ReportL
         } catch (ZigBeeClusterException e) {
             e.printStackTrace();
         }
-
-        initialised = true;
     }
 
     @Override
@@ -66,17 +87,14 @@ public class ZigBeeOccupancyConverter extends ZigBeeConverter implements ReportL
 
     @Override
     public void receivedReport(String endPointId, short clusterId, Dictionary<Attribute, Object> reports) {
-
         logger.debug("ZigBee attribute reports {} from {}", reports, endPointId);
-        if (attrTemperature != null) {
-            try {
-                Integer value = (Integer) attrTemperature.getValue();
-                if (value != null) {
-                    double dValue = (double) value * scale;
-                    updateChannelState(new DecimalType(dValue));
-                }
-            } catch (ZigBeeClusterException e) {
-                e.printStackTrace();
+        final Enumeration<Attribute> attributes = reports.keys();
+        while (attributes.hasMoreElements()) {
+            final Attribute attribute = attributes.nextElement();
+            final Integer value = (Integer) reports.get(attribute);
+            if (value != null) {
+                double dValue = (double) value * scale;
+                updateChannelState(new DecimalType(dValue));
             }
         }
     }

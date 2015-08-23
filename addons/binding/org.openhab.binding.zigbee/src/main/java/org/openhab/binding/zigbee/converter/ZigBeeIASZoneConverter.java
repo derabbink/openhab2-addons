@@ -11,13 +11,13 @@ import org.bubblecloud.zigbee.api.cluster.impl.api.core.ReportListener;
 import org.bubblecloud.zigbee.api.cluster.impl.api.core.Reporter;
 import org.bubblecloud.zigbee.api.cluster.impl.api.core.ZigBeeClusterException;
 import org.bubblecloud.zigbee.api.cluster.impl.attribute.Attributes;
-import org.bubblecloud.zigbee.api.cluster.measurement_sensing.TemperatureMeasurement;
+import org.bubblecloud.zigbee.api.cluster.security_safety.IASZone;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.types.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ZigBeeTemperatureConverter extends ZigBeeConverter implements ReportListener {
+public class ZigBeeIASZoneConverter extends ZigBeeConverter implements ReportListener {
     private Logger logger = LoggerFactory.getLogger(ZigBeeConverter.class);
 
     private Attribute attrTemperature;
@@ -31,12 +31,9 @@ public class ZigBeeTemperatureConverter extends ZigBeeConverter implements Repor
             return;
         }
 
-        if (channel.getArguments().containsKey("Scale")) {
-            scale = Double.parseDouble(channel.getArguments().get("Scale"));
-        }
-
-        attrTemperature = coordinator.openAttribute(channel.getAddress(), TemperatureMeasurement.class,
-                Attributes.CURRENT_LEVEL, this);
+        // TODO this works, but I think uses the wrong concept!
+        attrTemperature = coordinator.openAttribute(channel.getAddress(), IASZone.class, Attributes.CURRENT_LEVEL,
+                this);
         if (attrTemperature == null) {
             logger.error("Error opening attribute {}", channel.getAddress());
             return;
@@ -49,7 +46,7 @@ public class ZigBeeTemperatureConverter extends ZigBeeConverter implements Repor
             logger.warn("{}: Device not found at {}.", channel.getUID(), channel.getAddress());
             return;
         }
-        Cluster cluster = device.getCluster(ZigBeeApiConstants.CLUSTER_ID_TEMPERATURE_MEASUREMENT);
+        Cluster cluster = device.getCluster(ZigBeeApiConstants.CLUSTER_ID_IAS_ZONE);
         if (cluster != null) {
             Attribute attribute = cluster.getAttribute(0);
             final Reporter reporter = attribute.getReporter();
