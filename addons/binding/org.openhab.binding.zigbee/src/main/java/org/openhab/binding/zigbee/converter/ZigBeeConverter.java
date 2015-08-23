@@ -87,7 +87,9 @@ public abstract class ZigBeeConverter {
             // Add all the converters into the map...
             clusterMap.put("Color", ZigBeeColorConverter.class);
             clusterMap.put("ColorTemperature", ZigBeeColorTemperatureConverter.class);
+            clusterMap.put("ElectricalMeasurement", ZigBeeElectricalMeasurementConverter.class);
             clusterMap.put("HumiditySensor", ZigBeeHumiditySensorConverter.class);
+            clusterMap.put("IASZone", ZigBeeIASZoneConverter.class);
             clusterMap.put("Level", ZigBeeLevelConverter.class);
             clusterMap.put("LightSensor", ZigBeeLightSensorConverter.class);
             clusterMap.put("OccupancySensor", ZigBeeOccupancySensorConverter.class);

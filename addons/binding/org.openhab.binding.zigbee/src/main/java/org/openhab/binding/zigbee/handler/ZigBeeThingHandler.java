@@ -243,6 +243,7 @@ public class ZigBeeThingHandler extends BaseThingHandler {
 
     public void setChannelState(ChannelUID channel, State state) {
         updateState(channel, state);
+        this.updateStatus(ThingStatus.ONLINE);
     }
 
     public class ZigBeeThingChannel {

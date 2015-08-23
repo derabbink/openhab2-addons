@@ -11,19 +11,26 @@ import org.bubblecloud.zigbee.api.cluster.impl.api.core.ReportListener;
 import org.bubblecloud.zigbee.api.cluster.impl.api.core.Reporter;
 import org.bubblecloud.zigbee.api.cluster.impl.api.core.ZigBeeClusterException;
 import org.bubblecloud.zigbee.api.cluster.impl.attribute.Attributes;
-import org.bubblecloud.zigbee.api.cluster.measurement_sensing.IlluminanceMeasurement;
+import org.bubblecloud.zigbee.api.cluster.measurement_sensing.TemperatureMeasurement;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.types.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ZigBeeLightSensorConverter extends ZigBeeConverter implements ReportListener {
+public class ZigBeeElectricalMeasurementConverter extends ZigBeeConverter implements ReportListener {
     private Logger logger = LoggerFactory.getLogger(ZigBeeConverter.class);
 
-    private Attribute attrLight;
+    private Attribute attrTemperature;
 
     private boolean initialised = false;
     private double scale = 1.0;
+
+    enum ELECTRICAL_PARAMETERS {
+        ACFrequency,
+        RMSVoltage,
+        RMSCurrent,
+        ActivePower
+    }
 
     @Override
     public void initializeConverter() {
@@ -35,9 +42,9 @@ public class ZigBeeLightSensorConverter extends ZigBeeConverter implements Repor
             scale = Double.parseDouble(channel.getArguments().get("Scale"));
         }
 
-        attrLight = coordinator.openAttribute(channel.getAddress(), IlluminanceMeasurement.class,
+        attrTemperature = coordinator.openAttribute(channel.getAddress(), TemperatureMeasurement.class,
                 Attributes.CURRENT_LEVEL, this);
-        if (attrLight == null) {
+        if (attrTemperature == null) {
             logger.error("Error opening attribute {}", channel.getAddress());
             return;
         }
@@ -49,7 +56,7 @@ public class ZigBeeLightSensorConverter extends ZigBeeConverter implements Repor
             logger.warn("{}: Device not found at {}.", channel.getUID(), channel.getAddress());
             return;
         }
-        Cluster cluster = device.getCluster(ZigBeeApiConstants.CLUSTER_ID_ILLUMINANCE_MEASUREMENT);
+        Cluster cluster = device.getCluster(ZigBeeApiConstants.CLUSTER_ID_TEMPERATURE_MEASUREMENT);
         if (cluster != null) {
             Attribute attribute = cluster.getAttribute(0);
             final Reporter reporter = attribute.getReporter();
@@ -61,7 +68,7 @@ public class ZigBeeLightSensorConverter extends ZigBeeConverter implements Repor
         }
 
         try {
-            Integer value = (Integer) attrLight.getValue();
+            Integer value = (Integer) attrTemperature.getValue();
             if (value != null) {
                 double dValue = (double) value * scale;
                 updateChannelState(new DecimalType(dValue));

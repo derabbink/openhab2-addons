@@ -116,4 +116,37 @@
         <description>Indicates if smoke is detected</description>
         <category>Smoke</category>
     </channel-type>
+
+    <!-- AC Frequency Channel -->
+    <channel-type id="frequency">
+        <item-type>Number</item-type>
+        <label>AC Frequency</label>
+        <description>Provides the measured AC frequency</description>
+        <category>Energy</category>
+    </channel-type>
+
+    <!-- Voltage Channel -->
+    <channel-type id="voltage">
+        <item-type>Number</item-type>
+        <label>Voltage</label>
+        <description>Provides the measured voltage</description>
+        <category>Energy</category>
+    </channel-type>
+
+    <!-- Current Channel -->
+    <channel-type id="current">
+        <item-type>Number</item-type>
+        <label>Current</label>
+        <description>Provides the measured current</description>
+        <category>Energy</category>
+    </channel-type>
+
+    <!-- Power Channel -->
+    <channel-type id="power">
+        <item-type>Number</item-type>
+        <label>Power</label>
+        <description>Provides the measured power</description>
+        <category>Energy</category>
+    </channel-type>
+
 </thing:thing-descriptions>
