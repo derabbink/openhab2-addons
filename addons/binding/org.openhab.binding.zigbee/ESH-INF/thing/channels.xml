@@ -131,6 +131,8 @@
         <label>Voltage</label>
         <description>Provides the measured voltage</description>
         <category>Energy</category>
+        <state pattern="%0.1f" readOnly="true">
+        </state>
     </channel-type>
 
     <!-- Current Channel -->
@@ -139,6 +141,8 @@
         <label>Current</label>
         <description>Provides the measured current</description>
         <category>Energy</category>
+        <state pattern="%0.1f" readOnly="true">
+        </state>
     </channel-type>
 
     <!-- Power Channel -->
@@ -147,6 +151,8 @@
         <label>Power</label>
         <description>Provides the measured power</description>
         <category>Energy</category>
+        <state pattern="%0.1f" readOnly="true">
+        </state>
     </channel-type>
 
 </thing:thing-descriptions>

@@ -19,12 +19,18 @@
 					<property name="binding:State:NumberType">39:LightSensor</property>
 				</properties>
 			</channel>
-			<channel id="occupancy-1" typeId="occupancy">
-				<label>Light Sensor</label>
-				<properties>
-					<property name="binding:State:NumberType">34:OccupancySensor</property>
-				</properties>
-			</channel>
+            <channel id="occupancy-1" typeId="occupancy">
+                <label>Occupancy Sensor</label>
+                <properties>
+                    <property name="binding:State:NumberType">34:OccupancySensor</property>
+                </properties>
+            </channel>
+            <channel id="occupancy-2" typeId="occupancy">
+                <label>IAS Zone</label>
+                <properties>
+                    <property name="binding:State:NumberType">34:IASZone</property>
+                </properties>
+            </channel>
 		</channels>
 		<properties>
 			<property name="vendor">Develco</property>

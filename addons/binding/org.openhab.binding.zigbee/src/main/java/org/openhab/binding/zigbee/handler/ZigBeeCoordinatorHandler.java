@@ -360,6 +360,9 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
 
     public <T extends Cluster> T openCluster(String zigbeeAddress, Class<T> clusterId) {
         final Device device = getDeviceByIndexOrEndpointId(zigbeeApi, zigbeeAddress);
+        if (device == null) {
+            return null;
+        }
         return device.getCluster(clusterId);
     }
 
