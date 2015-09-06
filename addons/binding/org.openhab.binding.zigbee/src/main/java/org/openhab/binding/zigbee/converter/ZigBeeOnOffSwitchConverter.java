@@ -33,6 +33,7 @@ public class ZigBeeOnOffSwitchConverter extends ZigBeeConverter implements Repor
         clusOnOff = coordinator.openCluster(channel.getAddress(), OnOff.class);
         if (attrOnOff == null || clusOnOff == null) {
             logger.error("Error opening device on/off controls {}", channel.getAddress());
+            return;
         }
 
         try {
@@ -43,7 +44,7 @@ public class ZigBeeOnOffSwitchConverter extends ZigBeeConverter implements Repor
                 updateChannelState(OnOffType.OFF);
             }
         } catch (ZigBeeClusterException e) {
-            e.printStackTrace();
+            // e.printStackTrace();
         }
 
         initialised = true;

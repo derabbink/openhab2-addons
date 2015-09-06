@@ -45,7 +45,7 @@ public class ZigBeeLevelConverter extends ZigBeeConverter implements ReportListe
                 updateChannelState(new PercentType(value));
             }
         } catch (ZigBeeClusterException e) {
-            e.printStackTrace();
+            // e.printStackTrace();
         }
 
         initialised = true;

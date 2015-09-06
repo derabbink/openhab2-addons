@@ -15,6 +15,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.bubblecloud.zigbee.api.Device;
+import org.bubblecloud.zigbee.network.impl.ZigBeeNetworkManagerException;
 import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Channel;
@@ -116,7 +118,8 @@ public class ZigBeeThingHandler extends BaseThingHandler {
                     try {
                         dataType = DataType.valueOf(bindingType[2]);
                     } catch (IllegalArgumentException e) {
-                        logger.warn("{}: Invalid item type defined ({}). Assuming DecimalType", nodeAddress, dataType);
+                        logger.warn("{}: Invalid item type defined ({}). Assuming DecimalType", nodeAddress,
+                                bindingType[2]);
                     }
 
                     String address = nodeAddress + "/" + endpointId;
@@ -190,8 +193,37 @@ public class ZigBeeThingHandler extends BaseThingHandler {
 
     @Override
     public void handleConfigurationUpdate(Map<String, Object> configurationParameters) {
+        // Sanity check
+        if (configurationParameters == null) {
+            logger.warn("{}: No configuration parameters provided.", this.thing.getUID());
+            return;
+        }
+
         Configuration configuration = editConfiguration();
         for (Entry<String, Object> configurationParameter : configurationParameters.entrySet()) {
+            String[] cfg = configurationParameter.getKey().split("_");
+            if ("config".equals(cfg[0])) {
+                if (cfg.length != 4) {
+                    logger.warn("{}: Configuration invalid {}", this.thing.getUID(), configurationParameter.getKey());
+                    continue;
+                }
+
+                int endpoint = Integer.parseInt(cfg[1]);
+                int cluster = Integer.parseInt(cfg[2]);
+                String address = nodeAddress + "/" + endpoint;
+
+                final Device device = coordinatorHandler.getDevice(address);
+                try {
+                    if (device.bindToLocal(cluster) == false) {
+                        logger.warn("{}: Error adding binding for cluster {}", address, cluster);
+                    }
+                } catch (ZigBeeNetworkManagerException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            } else {
+                logger.warn("{}: Configuration invalid {}", this.thing.getUID(), configurationParameter.getKey());
+            }
         }
 
         // Persist changes
@@ -200,16 +232,20 @@ public class ZigBeeThingHandler extends BaseThingHandler {
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
+        // Sanity check that there's something to do
         if (thingChannelsCmd == null) {
             logger.warn("No commands for channel {}.", channelUID);
             return;
         }
+
+        // And check that we have a coordinator to work through
         if (coordinatorHandler == null) {
             logger.warn("Coordinator handler not found. Cannot handle command without coordinator.");
             updateStatus(ThingStatus.OFFLINE);
             return;
         }
 
+        // Get the type of data we have to deal with. This is required so we know what converter to use...
         DataType dataType;
         try {
             dataType = DataType.valueOf(command.getClass().getSimpleName());

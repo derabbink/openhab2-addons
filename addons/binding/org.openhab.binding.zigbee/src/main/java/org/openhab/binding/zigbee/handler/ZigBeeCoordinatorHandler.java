@@ -39,6 +39,7 @@ import org.bubblecloud.zigbee.network.ZigBeeNode;
 import org.bubblecloud.zigbee.network.ZigBeeNodeDescriptor;
 import org.bubblecloud.zigbee.network.ZigBeeNodePowerDescriptor;
 import org.bubblecloud.zigbee.network.impl.ZigBeeEndpointImpl;
+import org.bubblecloud.zigbee.network.impl.ZigBeeNetworkManagerException;
 import org.bubblecloud.zigbee.network.impl.ZigBeeNodeImpl;
 import org.bubblecloud.zigbee.network.model.DiscoveryMode;
 import org.bubblecloud.zigbee.network.port.ZigBeePort;
@@ -51,6 +52,7 @@ import org.eclipse.smarthome.core.thing.ThingStatusInfo;
 import org.eclipse.smarthome.core.thing.binding.BaseBridgeHandler;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.openhab.binding.zigbee.discovery.ZigBeeDiscoveryService;
+import org.osgi.framework.ServiceRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +79,7 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
     private ZigBeePort networkInterface;
 
     private ZigBeeDiscoveryService discoveryService;
+    private ServiceRegistration<?> serviceReg;
 
     private String folderName = "userdata/zigbee";
 
@@ -112,6 +115,7 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
     public void dispose() {
         // Remove the discovery service
         discoveryService.deactivate();
+        serviceReg.unregister();
 
         // If we have scheduled tasks, stop them
         if (restartJob != null) {
@@ -187,8 +191,6 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
 
         logger.debug("ZigBee network [{}] started", this.thing.getUID());
 
-        final XStream stream = new XStream(new StaxDriver());
-
         final List<ZigBeeEndpoint> endpoints = new ArrayList<ZigBeeEndpoint>();
         for (final ZigBeeNode node : zigbeeApi.getNodes()) {
             for (final ZigBeeEndpoint endpoint : zigbeeApi.getNodeEndpoints(node)) {
@@ -196,7 +198,6 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
             }
         }
         waitForNetwork();
-
     }
 
     /**
@@ -242,7 +243,7 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
         discoveryService.activate();
 
         // And register it as an OSGi service
-        bundleContext.registerService(DiscoveryService.class.getName(), discoveryService,
+        serviceReg = bundleContext.registerService(DiscoveryService.class.getName(), discoveryService,
                 new Hashtable<String, Object>());
 
         logger.debug("Browsing ZigBee network [{}]...", this.thing.getUID());
@@ -539,7 +540,6 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
         try {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
             final XStream stream = createXStream();
-            @SuppressWarnings("unchecked")
             Object xxx = stream.fromXML(reader);
             final List<ZigBeeEndpoint> endpoints = (List<ZigBeeEndpoint>) xxx;
 
@@ -601,5 +601,15 @@ public abstract class ZigBeeCoordinatorHandler extends BaseBridgeHandler impleme
 
     public Device getDevice(String endPointId) {
         return zigbeeApi.getDevice(endPointId);
+    }
+
+    public void bindAttribute(String address, int cluster, int attribute) {
+        Device server = getDeviceByIndexOrEndpointId(zigbeeApi, address);
+
+        try {
+            server.bindToLocal(cluster);
+        } catch (final ZigBeeNetworkManagerException e) {
+            e.printStackTrace();
+        }
     }
 }

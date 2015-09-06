@@ -25,16 +25,44 @@
                     <property name="binding:State:NumberType">34:OccupancySensor</property>
                 </properties>
             </channel>
-            <channel id="occupancy-2" typeId="occupancy">
-                <label>IAS Zone</label>
-                <properties>
-                    <property name="binding:State:NumberType">34:IASZone</property>
-                </properties>
-            </channel>
 		</channels>
 		<properties>
 			<property name="vendor">Develco</property>
 			<property name="model">ZHOT101</property>
 		</properties>
+		<config-description>
+            <parameter-group name="configuration">
+                <context>setup</context>
+                <label>Configuration Parameters</label>
+                <description></description>
+            </parameter-group>
+            <parameter name="config_34_1030_0" type="integer" groupName="configuration">
+                <label>Enable Occupancy Reporting</label>
+                <description><![CDATA[Enabled or disables occupancy reports]]></description>
+                <default>0</default>
+                <options>
+                    <option value="0">Disable</option>
+                    <option value="1">Enable</option>
+                </options>
+            </parameter>
+            <parameter name="config_39_1024_0" type="integer" groupName="configuration">
+                <label>Enable Light Sensor Reporting</label>
+                <description><![CDATA[Enabled or disables light sensor reports]]></description>
+                <default>0</default>
+                <options>
+                    <option value="0">Disable</option>
+                    <option value="1">Enable</option>
+                </options>
+            </parameter>
+            <parameter name="config_38_1026_0" type="integer" groupName="configuration">
+                <label>Enable Temperature Reporting</label>
+                <description><![CDATA[Enabled or disables temperature reports]]></description>
+                <default>0</default>
+                <options>
+                    <option value="0">Disable</option>
+                    <option value="1">Enable</option>
+                </options>
+            </parameter>
+		</config-description>
 	</thing-type>
 </thing:thing-descriptions>

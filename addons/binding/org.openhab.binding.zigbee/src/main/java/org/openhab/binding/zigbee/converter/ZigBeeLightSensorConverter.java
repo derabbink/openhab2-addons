@@ -57,6 +57,7 @@ public class ZigBeeLightSensorConverter extends ZigBeeConverter implements Repor
                 logger.warn("{}: Attribute does not provide reports.", channel.getUID());
             } else {
                 reporter.addReportListener(this, false);
+                logger.debug("{} Reporting configured", channel.getAddress());
             }
         }
 
@@ -87,16 +88,22 @@ public class ZigBeeLightSensorConverter extends ZigBeeConverter implements Repor
 
     @Override
     public void receivedReport(String endPointId, short clusterId, Dictionary<Attribute, Object> reports) {
-        logger.debug("ZigBee attribute reports {} from {}", reports, endPointId);
         final Enumeration<Attribute> attributes = reports.keys();
         while (attributes.hasMoreElements()) {
             final Attribute attribute = attributes.nextElement();
+
+            // Make sure this is the right attribute!
+            if (clusterId != ZigBeeApiConstants.CLUSTER_ID_ILLUMINANCE_MEASUREMENT && attribute.getId() != 0) {
+                continue;
+            }
+
             final Integer value = (Integer) reports.get(attribute);
             if (value != null) {
-                double dValue = (double) value * scale;
-                updateChannelState(new DecimalType(dValue));
+                DecimalType state = new DecimalType((double) value * scale);
+                logger.debug("{} ZigBee attribute report: {} {} ({}) is {} ({})", endPointId, clusterId,
+                        attribute.getName(), attribute.getId(), value, state);
+                updateChannelState(state);
             }
         }
     }
-
 }

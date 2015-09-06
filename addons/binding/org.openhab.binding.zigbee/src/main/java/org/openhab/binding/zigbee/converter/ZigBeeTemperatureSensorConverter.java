@@ -87,14 +87,21 @@ public class ZigBeeTemperatureSensorConverter extends ZigBeeConverter implements
 
     @Override
     public void receivedReport(String endPointId, short clusterId, Dictionary<Attribute, Object> reports) {
-        logger.debug("ZigBee attribute reports {} from {}", reports, endPointId);
         final Enumeration<Attribute> attributes = reports.keys();
         while (attributes.hasMoreElements()) {
             final Attribute attribute = attributes.nextElement();
+
+            // Make sure this is the right attribute!
+            if (clusterId != ZigBeeApiConstants.CLUSTER_ID_TEMPERATURE_MEASUREMENT && attribute.getId() != 0) {
+                continue;
+            }
+
             final Integer value = (Integer) reports.get(attribute);
             if (value != null) {
-                double dValue = (double) value * scale;
-                updateChannelState(new DecimalType(dValue));
+                DecimalType state = new DecimalType((double) value * scale);
+                logger.debug("{} ZigBee attribute report: {} {} ({}) is {} ({})", endPointId, clusterId,
+                        attribute.getName(), attribute.getId(), value, state);
+                updateChannelState(state);
             }
         }
     }

@@ -59,7 +59,7 @@
     <!-- Occupancy Channel -->
     <channel-type id="occupancy">
         <item-type>Switch</item-type>
-        <label>Door Open</label>
+        <label>Occupancy</label>
         <description>Indicates if the zone occupancy sensor is active
         </description>
         <category>Motion</category>
