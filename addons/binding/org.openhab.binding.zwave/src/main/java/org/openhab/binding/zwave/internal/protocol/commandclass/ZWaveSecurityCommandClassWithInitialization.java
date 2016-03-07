@@ -455,12 +455,12 @@ public class ZWaveSecurityCommandClassWithInitialization extends ZWaveSecurityCo
     @Override
     boolean checkRealNetworkKeyLoaded() {
         if (realNetworkKey == null) {
-            String errorMessage = "NODE " + this.getNode()
+            String errorMessage = "NODE " + this.getNode().getNodeId()
                     + ": Trying to perform secure operation but Network key is NOT set due to: ";
             if (keyException != null) {
                 errorMessage += keyException.getMessage();
             }
-            logger.error(errorMessage, keyException);
+            // logger.error(errorMessage, keyException);
             if (inclusionStateTracker != null) {
                 inclusionStateTracker.setErrorState(errorMessage);
             }

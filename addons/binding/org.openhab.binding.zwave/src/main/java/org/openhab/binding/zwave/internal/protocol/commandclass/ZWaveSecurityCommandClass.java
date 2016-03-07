@@ -1095,6 +1095,9 @@ public abstract class ZWaveSecurityCommandClass extends ZWaveCommandClass {
     }
 
     public static byte[] hexStringToByteArray(String hexStringParam) {
+        if (hexStringParam == null) {
+            return new byte[0];
+        }
         String hexString = hexStringParam.replace("0x", "");
         hexString = hexString.replace(",", "");
         hexString = hexString.replace(" ", "");

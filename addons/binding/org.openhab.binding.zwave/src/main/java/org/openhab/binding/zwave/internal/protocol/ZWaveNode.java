@@ -832,7 +832,7 @@ public class ZWaveNode {
 
     /**
      * Gets whether the node supports beaming
-     * 
+     *
      * @return true if the node supports beaming
      */
     public boolean isBeaming() {
@@ -841,7 +841,7 @@ public class ZWaveNode {
 
     /**
      * Sets whether the node supports beaming.
-     * 
+     *
      * @param beaming true if beaming is supported
      */
     public void setBeaming(boolean beaming) {
@@ -855,7 +855,7 @@ public class ZWaveNode {
     /**
      * Invoked by {@link ZWaveSecurityCommandClass} when a
      * {@link ZWaveSecurityCommandClass#SECURITY_SUPPORTED_REPORT} is received.
-     * 
+     *
      * @param data the class id for each class which must be encrypted in transmission
      */
     public void setSecuredClasses(byte[] data) {
@@ -961,5 +961,9 @@ public class ZWaveNode {
             }
         }
         return result;
+    }
+
+    public ZWaveController getController() {
+        return controller;
     }
 }

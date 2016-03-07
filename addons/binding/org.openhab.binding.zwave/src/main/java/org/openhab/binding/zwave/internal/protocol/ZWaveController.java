@@ -1291,4 +1291,16 @@ public class ZWaveController {
     public UID getUID() {
         return ioHandler.getUID();
     }
+
+    /**
+     * This is required by {@link ZWaveSecurityCommandClass} for the secure pairing process.
+     * {@link ZWaveSecurityCommandClass} can't use the event handling because the
+     * object won't exist when this occurs, so we hold it here so {@link ZWaveSecurityCommandClass}
+     * can access it
+     * 
+     * @return
+     */
+    public ZWaveInclusionEvent getLastIncludeSlaveFoundEvent() {
+        return lastIncludeSlaveFoundEvent;
+    }
 }
