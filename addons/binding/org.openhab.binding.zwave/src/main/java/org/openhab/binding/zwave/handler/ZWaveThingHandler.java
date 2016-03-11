@@ -53,6 +53,7 @@ import org.openhab.binding.zwave.internal.protocol.commandclass.ZWaveWakeUpComma
 import org.openhab.binding.zwave.internal.protocol.commandclass.ZWaveWakeUpCommandClass.ZWaveWakeUpEvent;
 import org.openhab.binding.zwave.internal.protocol.event.ZWaveAssociationEvent;
 import org.openhab.binding.zwave.internal.protocol.event.ZWaveCommandClassValueEvent;
+import org.openhab.binding.zwave.internal.protocol.event.ZWaveDelayedPollEvent;
 import org.openhab.binding.zwave.internal.protocol.event.ZWaveEvent;
 import org.openhab.binding.zwave.internal.protocol.event.ZWaveInitializationStateEvent;
 import org.openhab.binding.zwave.internal.protocol.event.ZWaveNetworkEvent;
@@ -81,10 +82,12 @@ public class ZWaveThingHandler extends BaseThingHandler implements ZWaveEventLis
 
     private ScheduledFuture<?> pollingJob = null;
 
-    private final int POLLING_PERIOD_MIN = 15;
-    private final int POLLING_PERIOD_MAX = 7200;
-    private final int POLLING_PERIOD_DEFAULT = 1800;
-    private int pollingPeriod = POLLING_PERIOD_DEFAULT;
+    private final long POLLING_PERIOD_MIN = 15;
+    private final long POLLING_PERIOD_MAX = 7200;
+    private final long POLLING_PERIOD_DEFAULT = 1800;
+    private final long DELAYED_POLLING_PERIOD_MAX = 10;
+    private final long REFRESH_POLL_DELAY = 50;
+    private long pollingPeriod = POLLING_PERIOD_DEFAULT;
 
     public ZWaveThingHandler(Thing zwaveDevice) {
         super(zwaveDevice);
@@ -195,6 +198,11 @@ public class ZWaveThingHandler extends BaseThingHandler implements ZWaveEventLis
                         thingChannelsCmd.add(chan);
                     }
 
+                    // First time round, then add the polling class
+                    if (first) {
+                        thingChannelsPoll.add(chan);
+                    }
+
                     // Add the state and polling handlers
                     if ("*".equals(bindingType[1]) || "State".equals(bindingType[1])) {
                         thingChannelsState.add(chan);
@@ -223,7 +231,12 @@ public class ZWaveThingHandler extends BaseThingHandler implements ZWaveEventLis
         startPolling();
     }
 
-    private void startPolling() {
+    /**
+     * Start polling with an initial delay
+     *
+     * @param initialPeriod time to start in milliseconds
+     */
+    private void startPolling(long initialPeriod) {
         if (pollingJob != null) {
             pollingJob.cancel(true);
         }
@@ -267,8 +280,14 @@ public class ZWaveThingHandler extends BaseThingHandler implements ZWaveEventLis
             }
         };
 
-        pollingJob = scheduler.scheduleAtFixedRate(pollingRunnable, pollingPeriod, pollingPeriod, TimeUnit.SECONDS);
-        logger.debug("NODE {}: Polling intialised at {} seconds.", nodeId, pollingPeriod);
+        pollingJob = scheduler.scheduleAtFixedRate(pollingRunnable, initialPeriod, pollingPeriod,
+                TimeUnit.MILLISECONDS);
+        logger.debug("NODE {}: Polling intialised at {} seconds - start in {} milliseconds.", nodeId, pollingPeriod,
+                initialPeriod);
+    }
+
+    private void startPolling() {
+        startPolling(pollingPeriod * 1000);
     }
 
     @Override
@@ -553,13 +572,13 @@ public class ZWaveThingHandler extends BaseThingHandler implements ZWaveEventLis
                     startPolling();
                 }
             } else if ("action".equals(cfg[0])) {
-                if ("failed".equals(cfg[1])) {
+                if ("failed".equals(cfg[1]) && "GO".equals(valueObject)) {
                     controllerHandler.replaceFailedNode(nodeId);
                 }
-                if ("remove".equals(cfg[1])) {
+                if ("remove".equals(cfg[1]) && "GO".equals(valueObject)) {
                     controllerHandler.removeFailedNode(nodeId);
                 }
-                if ("reinit".equals(cfg[1])) {
+                if ("reinit".equals(cfg[1]) && "GO".equals(valueObject)) {
                     logger.debug("NODE {}: Re-initialising node!", nodeId);
 
                     // Delete the saved XML
@@ -587,6 +606,11 @@ public class ZWaveThingHandler extends BaseThingHandler implements ZWaveEventLis
         logger.debug("NODE {}: Command received {} --> {}", nodeId, channelUID, command);
         if (controllerHandler == null) {
             logger.warn("Controller handler not found. Cannot handle command without ZWave controller.");
+            return;
+        }
+
+        if (command == RefreshType.REFRESH) {
+            startPolling(REFRESH_POLL_DELAY);
             return;
         }
 
@@ -625,11 +649,7 @@ public class ZWaveThingHandler extends BaseThingHandler implements ZWaveEventLis
         }
 
         List<SerialMessage> messages = null;
-        if (command == RefreshType.REFRESH) {
-            messages = cmdChannel.converter.executeRefresh(cmdChannel, node);
-        } else {
-            messages = cmdChannel.converter.receiveCommand(cmdChannel, node, command);
-        }
+        messages = cmdChannel.converter.receiveCommand(cmdChannel, node, command);
 
         if (messages == null) {
             logger.warn("NODE {}: No messages returned from converter", nodeId);
@@ -943,6 +963,19 @@ public class ZWaveThingHandler extends BaseThingHandler implements ZWaveEventLis
                 updateNeighbours();
             }
         }
+
+        if (incomingEvent instanceof ZWaveDelayedPollEvent) {
+            long delay = ((ZWaveDelayedPollEvent) incomingEvent).getDelay();
+            TimeUnit unit = ((ZWaveDelayedPollEvent) incomingEvent).getUnit();
+
+            // don't create a poll beyond our max value
+            if (unit.toSeconds(delay) > DELAYED_POLLING_PERIOD_MAX) {
+                delay = DELAYED_POLLING_PERIOD_MAX;
+                unit = TimeUnit.SECONDS;
+            }
+
+            startPolling(unit.toMillis(delay));
+        }
     }
 
     private void updateNeighbours() {
@@ -1020,6 +1053,9 @@ public class ZWaveThingHandler extends BaseThingHandler implements ZWaveEventLis
         OnOffType,
         OpenClosedType,
         PercentType,
+        StringType,
+        DateTimeType,
+        UpDownType,
         StopMoveType;
     }
 

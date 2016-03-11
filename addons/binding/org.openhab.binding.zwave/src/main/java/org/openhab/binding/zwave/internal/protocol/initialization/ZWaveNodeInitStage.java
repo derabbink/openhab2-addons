@@ -37,11 +37,11 @@ public enum ZWaveNodeInitStage {
     ASSOCIATIONS(16, false, "Associations"),
     SET_WAKEUP(17, false, "Wakeup Target"),
     SET_ASSOCIATION(18, false, "Wakeup Target"),
-    GET_CONFIGURATION(19, false, "Getting configuration"),
-    STATIC_END(20, false, "Static Initialisation Finished"),
+    STATIC_END(19, false, "Static Initialisation Finished"),
 
     // States below are not restored from the configuration files
-    SESSION_START(21, false, "Restore Marker"),
+    SESSION_START(20, false, "Restore Marker"),
+    GET_CONFIGURATION(21, false, "Getting configuration"),
     DYNAMIC_VALUES(22, false, "Frequently Changed Information"),
 
     DONE(23, false, "Node Complete");
