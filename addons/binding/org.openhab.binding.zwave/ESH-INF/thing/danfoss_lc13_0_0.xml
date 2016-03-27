@@ -26,7 +26,7 @@ Living Connect Z Thermostat<br /><h1>Overview</h1><p>Radiator Thermostat</p>
           <property name="binding:*:PercentType">BATTERY</property>
         </properties>
       </channel>
-      <channel id="thermostat_setpoint" typeId="thermostat_setpoint">
+      <channel id="thermostat_setpoint_heating" typeId="thermostat_setpoint">
         <label>Setpoint (heating)</label>
         <properties>
           <property name="binding:*:DecimalType">THERMOSTAT_SETPOINT;type=HEATING</property>

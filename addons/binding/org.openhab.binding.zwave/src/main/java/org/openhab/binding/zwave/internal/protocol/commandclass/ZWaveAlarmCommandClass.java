@@ -283,10 +283,29 @@ public class ZWaveAlarmCommandClass extends ZWaveCommandClass
         BURGLAR(7, "Burglar"),
         POWER_MANAGEMENT(8, "Power Management"),
         SYSTEM(9, "System"),
+        // DEADBOLT_JAMMED(9, "Bolt is Jammed"),
         EMERGENCY(10, "Emergency"),
         CLOCK(11, "Clock"),
         APPLIANCE(12, "Appliance"),
-        HOME_HEALTH(13, "Home Health");
+        HOME_HEALTH(13, "Home Health"),
+        // CODE_ADDED(13, "Code was Added"),
+        UNLOCKED(16, "Unlocked"),
+        KEYPAD_LOCKED(18, "Locked with Keypad"),
+        KEYPAD_UNLOCK(19, "Unlocked by Keypad"),
+        MANUAL_LOCKED(21, "Manual Locked"),
+        MANUAL_UNLOCK(22, "Manual unlocked"),
+        RF_LOCKED(24, "Locked by RF module"),
+        RF_UNLOCK(25, "Unlocked by RF module"),
+        AUTO_LOCKED(27, "Auto Locked"),
+        ALL_CODES_DELETED(32, "All Codes Deleted"),
+        CODE_DELETED(33, "User Code Deleted"),
+        CODE_CHANGED(112, "User Code Changed"),
+        DUPLICATE_CODE(113, "Duplicate Code"),
+        POWER_CYCLED(130, "Power Cycled"),
+        TAMPER_ALARM(161, "Failed Code"),
+        BATTERY_LOW(167, "Battery Low"),
+        BATTERY_CRITICAL(168, "Battery Critical"),
+        BATTEERY_TOO_LOW(169, "Battery too low to operate");
 
         /**
          * A mapping between the integer code and its corresponding Alarm type to facilitate lookup by code.
@@ -341,7 +360,6 @@ public class ZWaveAlarmCommandClass extends ZWaveCommandClass
     /**
      * Class to hold alarm state
      *
-     * @author Chris Jackson
      */
     @XStreamAlias("alarmState")
     private class Alarm {

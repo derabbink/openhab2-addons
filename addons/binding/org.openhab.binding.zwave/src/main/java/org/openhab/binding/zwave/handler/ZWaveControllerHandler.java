@@ -22,7 +22,6 @@ import org.eclipse.smarthome.config.core.validation.ConfigValidationException;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.ChannelUID;
-import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.UID;
 import org.eclipse.smarthome.core.thing.binding.BaseBridgeHandler;
@@ -114,7 +113,7 @@ public abstract class ZWaveControllerHandler extends BaseBridgeHandler implement
             }
         }
 
-        super.initialize();
+        // super.initialize();
     }
 
     /**
@@ -296,10 +295,10 @@ public abstract class ZWaveControllerHandler extends BaseBridgeHandler implement
         if (event instanceof ZWaveNetworkStateEvent) {
             if (((ZWaveNetworkStateEvent) event).getNetworkState() == true) {
                 updateStatus(ThingStatus.ONLINE);
-                Bridge bridge = this.getThing();
-                for (Thing child : bridge.getThings()) {
-                    ((ZWaveThingHandler) child.getHandler()).bridgeHandlerInitialized(this, bridge);
-                }
+                // Bridge bridge = this.getThing();
+                // for (Thing child : bridge.getThings()) {
+                // ((ZWaveThingHandler) child.getHandler()).bridgeHandlerInitialized(this, bridge);
+                // }
             } else {
                 updateStatus(ThingStatus.OFFLINE);
             }

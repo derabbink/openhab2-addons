@@ -199,20 +199,26 @@ public class ZWaveNodeNamingCommandClass extends ZWaveCommandClass implements ZW
 
         byte[] strBuffer = Arrays.copyOfRange(serialMessage.getMessagePayload(), offset + 2, offset + 2 + numBytes);
 
+        String response = null;
         try {
             switch (charPresentation) {
                 case ENCODING_ASCII:
                 case ENCODING_EXTENDED_ASCII:
-                    return new String(strBuffer, "ASCII");
-
+                    response = new String(strBuffer, "ASCII");
+                    break;
                 case ENCODING_UTF16:
                     String sTemp = new String(strBuffer, "UTF-16");
-                    return new String(sTemp.getBytes("UTF-8"), "UTF-8");
+                    response = new String(sTemp.getBytes("UTF-8"), "UTF-8");
+                    break;
             }
         } catch (UnsupportedEncodingException uee) {
             System.out.println("Exception: " + uee);
         }
-        return null;
+        if (response == null) {
+            return null;
+        }
+
+        return response.replaceAll("\\p{C}", "?");
     }
 
     /**

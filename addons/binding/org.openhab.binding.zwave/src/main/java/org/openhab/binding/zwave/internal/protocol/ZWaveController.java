@@ -385,6 +385,7 @@ public class ZWaveController {
                 return;
             }
 
+            boolean serializedOk = false;
             ZWaveNode node = null;
             try {
                 ZWaveNodeSerializer nodeSerializer = new ZWaveNodeSerializer();
@@ -404,6 +405,7 @@ public class ZWaveController {
                 } else {
                     // The restore was ok, but we have some work to set up the links that aren't
                     // made as the deserialiser doesn't call the constructor
+                    serializedOk = true;
                     logger.debug("NODE {}: Restore from config: Ok.", nodeId);
                     node.setRestoredFromConfigfile(controller);
 
@@ -434,11 +436,6 @@ public class ZWaveController {
                             }
                         }
                     }
-
-                    // We need to add this to the discovery since we bypass the initial discovery phases
-                    ZWaveEvent zEvent = new ZWaveInitializationStateEvent(node.getNodeId(),
-                            ZWaveNodeInitStage.DISCOVERY_COMPLETE);
-                    controller.notifyEventListeners(zEvent);
                 }
             }
 
@@ -458,6 +455,16 @@ public class ZWaveController {
 
             // Place nodes in the local ZWave Controller
             controller.zwaveNodes.putIfAbsent(nodeId, node);
+
+            // If we loaded from file, then we need to add this to the discovery since we bypass the initial discovery
+            // phases
+            if (serializedOk == true) {
+                ZWaveEvent zEvent = new ZWaveInitializationStateEvent(node.getNodeId(),
+                        ZWaveNodeInitStage.DISCOVERY_COMPLETE);
+                controller.notifyEventListeners(zEvent);
+            }
+
+            // Kick off the initialisation
             node.initialiseNode();
 
             logger.debug("NODE {}: Init node thread finished", nodeId);

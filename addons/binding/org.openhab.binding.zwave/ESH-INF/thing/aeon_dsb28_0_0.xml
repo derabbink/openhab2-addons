@@ -38,7 +38,7 @@
       <channel id="meter_reset" typeId="meter_reset">
         <label>Reset Meter</label>
         <properties>
-          <property name="binding:*:OnOffType">METER,BASIC;event=true</property>
+          <property name="binding:*:OnOffType">METER,BASIC;reset=true</property>
         </properties>
       </channel>
       <channel id="meter_watts1" typeId="meter_watts">

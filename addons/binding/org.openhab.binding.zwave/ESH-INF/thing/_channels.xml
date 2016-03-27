@@ -348,6 +348,12 @@
         <label>Switch</label>
         <description>Switch the light on and off</description>
         <category>Light</category>
+        <state>
+            <options>
+                <option value="On">On</option>
+                <option value="Off">Off</option>
+            </options>
+        </state>
     </channel-type>
 
     <!-- Brightness (Dimmer) Channel -->
