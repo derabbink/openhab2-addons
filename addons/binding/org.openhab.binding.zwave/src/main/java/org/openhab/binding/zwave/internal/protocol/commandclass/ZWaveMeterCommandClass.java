@@ -560,7 +560,6 @@ public class ZWaveMeterCommandClass extends ZWaveCommandClass
     /**
      * Z-Wave Meter value Event class. Indicates that a meter value changed.
      *
-     * @author Jan-Willem Spuij
      */
     public class ZWaveMeterValueEvent extends ZWaveCommandClassValueEvent {
 

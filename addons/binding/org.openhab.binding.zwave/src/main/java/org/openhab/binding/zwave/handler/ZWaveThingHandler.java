@@ -61,6 +61,7 @@ import org.openhab.binding.zwave.internal.protocol.event.ZWaveAssociationEvent;
 import org.openhab.binding.zwave.internal.protocol.event.ZWaveCommandClassValueEvent;
 import org.openhab.binding.zwave.internal.protocol.event.ZWaveDelayedPollEvent;
 import org.openhab.binding.zwave.internal.protocol.event.ZWaveEvent;
+import org.openhab.binding.zwave.internal.protocol.event.ZWaveInclusionEvent;
 import org.openhab.binding.zwave.internal.protocol.event.ZWaveInitializationStateEvent;
 import org.openhab.binding.zwave.internal.protocol.event.ZWaveNetworkEvent;
 import org.openhab.binding.zwave.internal.protocol.event.ZWaveNodeStatusEvent;
@@ -118,6 +119,18 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
         }
 
         updateThingType();
+
+        // TODO: Shouldn't the framework do this for us???
+        Bridge bridge = getBridge();
+        if (bridge != null) {
+            ThingHandler handler = bridge.getHandler();
+            if (handler instanceof ZWaveControllerHandler) {
+                ZWaveControllerHandler bridgeHandler = (ZWaveControllerHandler) handler;
+                if (bridgeHandler.getOwnNodeId() != 0) {
+                    bridgeHandlerInitialized(handler, bridge);
+                }
+            }
+        }
     }
 
     void initialiseNode() {
@@ -225,17 +238,6 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
             }
         }
 
-        // Bridge bridge = getBridge();
-        // if (bridge != null) {
-        // ThingHandler handler = bridge.getHandler();
-        // if (handler instanceof ZWaveControllerHandler) {
-        // ZWaveControllerHandler bridgeHandler = (ZWaveControllerHandler) handler;
-        // if (bridgeHandler.getOwnNodeId() != 0) {
-        // bridgeHandlerInitialized(handler, bridge);
-        // }
-        // }
-        // }
-
         startPolling();
     }
 
@@ -331,6 +333,7 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
         Runnable pollingRunnable = new Runnable() {
             @Override
             public void run() {
+                // TODO: If/when this code changes, we should only poll channels that are linked.
                 logger.debug("NODE {}: Polling...", nodeId);
                 ZWaveNode node = controllerHandler.getNode(nodeId);
                 if (node == null || node.isInitializationComplete() == false) {
@@ -851,6 +854,7 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
 
             // If this is a configuration parameter update, process it before the channels
             Configuration configuration = editConfiguration();
+            boolean cfgUpdated = false;
             switch (event.getCommandClass()) {
                 case CONFIGURATION:
                     ZWaveConfigurationParameter parameter = ((ZWaveConfigurationParameterEvent) event).getParameter();
@@ -967,6 +971,7 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
                         logger.debug("NODE {}: Sub-parameter setting {} is {} [{}]", nodeId, key,
                                 String.format("%08X", value), value);
 
+                        cfgUpdated = true;
                         configuration.put(key, value);
                         pendingCfg.remove(key);
                     }
@@ -988,12 +993,14 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
                         }
                         logger.debug("NODE {}: Update ASSOCIATION group_{}: {} members", groupId, group.size());
 
+                        cfgUpdated = true;
                         configuration.put("group_" + groupId, group);
                         pendingCfg.remove("group_" + groupId);
                     }
                     break;
 
                 case SWITCH_ALL:
+                    cfgUpdated = true;
                     configuration.put(ZWaveBindingConstants.CONFIGURATION_SWITCHALLMODE, event.getValue());
                     pendingCfg.remove(ZWaveBindingConstants.CONFIGURATION_SWITCHALLMODE);
                     break;
@@ -1001,10 +1008,12 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
                 case NODE_NAMING:
                     switch ((ZWaveNodeNamingCommandClass.Type) event.getType()) {
                         case NODENAME_LOCATION:
+                            cfgUpdated = true;
                             configuration.put(ZWaveBindingConstants.CONFIGURATION_NODELOCATION, event.getValue());
                             pendingCfg.remove(ZWaveBindingConstants.CONFIGURATION_NODELOCATION);
                             break;
                         case NODENAME_NAME:
+                            cfgUpdated = true;
                             configuration.put(ZWaveBindingConstants.CONFIGURATION_NODENAME, event.getValue());
                             pendingCfg.remove(ZWaveBindingConstants.CONFIGURATION_NODENAME);
                             break;
@@ -1014,6 +1023,7 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
                 case DOOR_LOCK:
                     switch ((ZWaveDoorLockCommandClass.Type) event.getType()) {
                         case DOORLOCK_TIMEOUT:
+                            cfgUpdated = true;
                             configuration.put(ZWaveBindingConstants.CONFIGURATION_DOORLOCKTIMEOUT, event.getValue());
                             pendingCfg.remove(ZWaveBindingConstants.CONFIGURATION_DOORLOCKTIMEOUT);
                             break;
@@ -1025,8 +1035,10 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
                 default:
                     break;
             }
-            logger.debug("NODE {}: Config updated", nodeId);
-            updateConfiguration(configuration);
+            if (cfgUpdated == true) {
+                logger.debug("NODE {}: Config updated", nodeId);
+                updateConfiguration(configuration);
+            }
 
             if (thingChannelsState == null) {
                 logger.error("NODE {}: No state handlers!", nodeId);
@@ -1178,13 +1190,35 @@ public class ZWaveThingHandler extends ConfigStatusThingHandler implements ZWave
             long delay = ((ZWaveDelayedPollEvent) incomingEvent).getDelay();
             TimeUnit unit = ((ZWaveDelayedPollEvent) incomingEvent).getUnit();
 
-            // don't create a poll beyond our max value
+            // Don't create a poll beyond our max value
             if (unit.toSeconds(delay) > DELAYED_POLLING_PERIOD_MAX) {
                 delay = DELAYED_POLLING_PERIOD_MAX;
                 unit = TimeUnit.SECONDS;
             }
 
             startPolling(unit.toMillis(delay));
+        }
+
+        // Handle exclusion of this node
+        if (incomingEvent instanceof ZWaveInclusionEvent) {
+            ZWaveInclusionEvent incEvent = (ZWaveInclusionEvent) incomingEvent;
+            if (incEvent.getNodeId() != nodeId) {
+                return;
+            }
+
+            switch (incEvent.getEvent()) {
+                case ExcludeDone:
+                    // Let our users know we're gone!
+                    updateStatus(ThingStatus.REMOVED, ThingStatusDetail.NONE, "Node was excluded from the controller");
+
+                    // Stop polling
+                    if (pollingJob != null) {
+                        pollingJob.cancel(true);
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
     }
 

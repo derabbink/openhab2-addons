@@ -65,11 +65,11 @@ public class ZWaveMeterConverter extends ZWaveCommandClassConverter {
         SerialMessage serialMessage;
 
         // Don't refresh channels that are the reset button
-        if ("true".equalsIgnoreCase(channel.getArguments().get("meterReset"))) {
+        if ("true".equalsIgnoreCase(channel.getArguments().get("reset"))) {
             return null;
         }
 
-        String meterScale = channel.getArguments().get("meterScale");
+        String meterScale = channel.getArguments().get("type");
         logger.debug("NODE {}: Generating poll message for {}, endpoint {}", node.getNodeId(),
                 commandClass.getCommandClass().getLabel(), channel.getEndpoint());
 

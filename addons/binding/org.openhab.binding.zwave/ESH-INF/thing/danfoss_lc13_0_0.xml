@@ -8,9 +8,7 @@
   <thing-type id="danfoss_lc13_00_000" listed="false">
     <label>LC-13 Living Connect Z Thermostat</label>
     <description><![CDATA[
-Living Connect Z Thermostat<br /><h1>Overview</h1><p>Radiator Thermostat</p>
-<br /><h2>Inclusion Information</h2><p>Short push middle button</p>
-<br /><h2>Wakeup Information</h2><p>Short push middle button</p>
+Living Connect Z Thermostat<br /><h1>Overview</h1><p>Radiator Thermostat</p> <br /><h2>Inclusion Information</h2><p>Short push middle button</p> <br /><h2>Wakeup Information</h2><p>Short push middle button</p>
     !]]></description>
 
     <!-- CHANNEL DEFINITIONS -->
@@ -43,6 +41,7 @@ Living Connect Z Thermostat<br /><h1>Overview</h1><p>Radiator Thermostat</p>
       <property name="defaultAssociations">1</property>
     </properties>
 
+    <!-- CONFIGURATION DESCRIPTIONS -->
     <config-description>
 
       <!-- ASSOCIATION DEFINITIONS -->

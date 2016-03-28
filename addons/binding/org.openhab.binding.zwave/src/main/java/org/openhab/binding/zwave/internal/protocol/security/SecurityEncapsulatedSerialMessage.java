@@ -72,7 +72,7 @@ public class SecurityEncapsulatedSerialMessage extends SerialMessage {
             // && bytesAreEqual(securityPayload.getMessageBytes()[1], ZWaveDoorLockCommandClass.DOORLOCK_SET);
         }
         logger.debug(
-                "NODE {}: securityTransactionComplete={}, payload=({}), transmitted={}, msSinceTransmitted={}, acked={}",
+                "NODE {}: securityTransactionComplete={}, payload=({}), transmitted={}, msSinceTransmitted={}, ackWaiting={}",
                 messageNode, result, SerialMessage.bb2hex(messageBeingEncapsulated.getMessagePayload()),
                 hasBeenTransmitted(), hasBeenTransmitted() ? (System.currentTimeMillis() - getTransmittedAt()) : "",
                 ackPending);

@@ -22,6 +22,7 @@ import org.eclipse.smarthome.config.core.validation.ConfigValidationException;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.ChannelUID;
+import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.UID;
 import org.eclipse.smarthome.core.thing.binding.BaseBridgeHandler;
@@ -293,12 +294,15 @@ public abstract class ZWaveControllerHandler extends BaseBridgeHandler implement
     @Override
     public void ZWaveIncomingEvent(ZWaveEvent event) {
         if (event instanceof ZWaveNetworkStateEvent) {
+            logger.debug("Controller: Incoming Network State Event {}",
+                    ((ZWaveNetworkStateEvent) event).getNetworkState());
             if (((ZWaveNetworkStateEvent) event).getNetworkState() == true) {
                 updateStatus(ThingStatus.ONLINE);
-                // Bridge bridge = this.getThing();
-                // for (Thing child : bridge.getThings()) {
-                // ((ZWaveThingHandler) child.getHandler()).bridgeHandlerInitialized(this, bridge);
-                // }
+                // TODO: Shouldn't the framework do this for us? Maybe it does here as there's a state change?
+                Bridge bridge = this.getThing();
+                for (Thing child : bridge.getThings()) {
+                    ((ZWaveThingHandler) child.getHandler()).bridgeHandlerInitialized(this, bridge);
+                }
             } else {
                 updateStatus(ThingStatus.OFFLINE);
             }

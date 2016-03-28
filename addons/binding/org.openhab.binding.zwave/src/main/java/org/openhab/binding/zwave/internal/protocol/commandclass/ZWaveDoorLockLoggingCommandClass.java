@@ -79,6 +79,8 @@ public class ZWaveDoorLockLoggingCommandClass extends ZWaveCommandClass implemen
         switch (command) {
             case LOGGING_SUPPORTED_REPORT:
                 supportedMessages = serialMessage.getMessagePayloadByte(offset + 1);
+                logger.debug("NODE {}: LOGGING_SUPPORTED_REPORT supports {} entries", this.getNode().getNodeId(),
+                        supportedMessages);
                 break;
             case LOGGING_RECORD_REPORT:
                 LogType eventType = LogType.getLogType(serialMessage.getMessagePayloadByte(offset + 1));

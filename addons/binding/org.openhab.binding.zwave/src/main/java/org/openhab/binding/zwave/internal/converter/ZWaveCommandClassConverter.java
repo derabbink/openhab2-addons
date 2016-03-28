@@ -40,10 +40,10 @@ public abstract class ZWaveCommandClassConverter {
     private static final Map<CommandClass, Class<? extends ZWaveCommandClassConverter>> converterMap;
 
     static {
-
         Map<CommandClass, Class<? extends ZWaveCommandClassConverter>> temp = new HashMap<CommandClass, Class<? extends ZWaveCommandClassConverter>>();
 
         temp.put(CommandClass.ALARM, ZWaveAlarmConverter.class);
+        temp.put(CommandClass.BARRIER_OPERATOR, ZWaveBarrierOperatorConverter.class);
         temp.put(CommandClass.BASIC, ZWaveBasicConverter.class);
         temp.put(CommandClass.BATTERY, ZWaveBatteryConverter.class);
         temp.put(CommandClass.CENTRAL_SCENE, ZWaveCentralSceneConverter.class);

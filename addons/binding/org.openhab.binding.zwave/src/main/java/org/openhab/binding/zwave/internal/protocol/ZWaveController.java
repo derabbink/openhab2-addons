@@ -27,7 +27,6 @@ import org.openhab.binding.zwave.internal.protocol.SerialMessage.SerialMessagePr
 import org.openhab.binding.zwave.internal.protocol.SerialMessage.SerialMessageType;
 import org.openhab.binding.zwave.internal.protocol.commandclass.ZWaveCommandClass;
 import org.openhab.binding.zwave.internal.protocol.commandclass.ZWaveCommandClass.CommandClass;
-import org.openhab.binding.zwave.internal.protocol.commandclass.ZWaveCommandClassDynamicState;
 import org.openhab.binding.zwave.internal.protocol.commandclass.ZWaveMultiInstanceCommandClass;
 import org.openhab.binding.zwave.internal.protocol.commandclass.ZWaveSecurityCommandClass;
 import org.openhab.binding.zwave.internal.protocol.commandclass.ZWaveWakeUpCommandClass;
@@ -558,18 +557,6 @@ public class ZWaveController {
                     // Initialise the new node
                     addNode(incEvent.getNodeId());
                     break;
-                // case IncludeDone:
-                // logger.debug("NODE {}: Including node.", incEvent.getNodeId());
-                // First make sure this isn't an existing node
-                // if (getNode(incEvent.getNodeId()) != null) {
-                // logger.debug("NODE {}: Newly included node already exists - not initialising.",
-                // incEvent.getNodeId());
-                // break;
-                // }
-
-                // Initialise the new node
-                // addNode(incEvent.getNodeId());
-                // break;
                 case ExcludeDone:
                     logger.debug("NODE {}: Excluding node.", incEvent.getNodeId());
                     // Remove the node from the controller
@@ -666,49 +653,51 @@ public class ZWaveController {
      * @param node
      *
      */
-    public void pollNode(ZWaveNode node) {
-        for (ZWaveCommandClass zwaveCommandClass : node.getCommandClasses()) {
-            logger.trace("NODE {}: Inspecting command class {}", node.getNodeId(),
-                    zwaveCommandClass.getCommandClass().getLabel());
-            if (zwaveCommandClass instanceof ZWaveCommandClassDynamicState) {
-                logger.debug("NODE {}: Found dynamic state command class {}", node.getNodeId(),
-                        zwaveCommandClass.getCommandClass().getLabel());
-                ZWaveCommandClassDynamicState zdds = (ZWaveCommandClassDynamicState) zwaveCommandClass;
-                int instances = zwaveCommandClass.getInstances();
-                if (instances == 1) {
-                    Collection<SerialMessage> dynamicQueries = zdds.getDynamicValues(true);
-                    for (SerialMessage serialMessage : dynamicQueries) {
-                        sendData(serialMessage);
-                    }
-                } else {
-                    for (int i = 1; i <= instances; i++) {
-                        Collection<SerialMessage> dynamicQueries = zdds.getDynamicValues(true);
-                        for (SerialMessage serialMessage : dynamicQueries) {
-                            sendData(node.encapsulate(serialMessage, zwaveCommandClass, i));
-                        }
-                    }
-                }
-            } else if (zwaveCommandClass instanceof ZWaveMultiInstanceCommandClass) {
-                ZWaveMultiInstanceCommandClass multiInstanceCommandClass = (ZWaveMultiInstanceCommandClass) zwaveCommandClass;
-                for (ZWaveEndpoint endpoint : multiInstanceCommandClass.getEndpoints()) {
-                    for (ZWaveCommandClass endpointCommandClass : endpoint.getCommandClasses()) {
-                        logger.trace("NODE {}: Inspecting command class {} for endpoint {}", node.getNodeId(),
-                                endpointCommandClass.getCommandClass().getLabel(), endpoint.getEndpointId());
-                        if (endpointCommandClass instanceof ZWaveCommandClassDynamicState) {
-                            logger.debug("NODE {}: Found dynamic state command class {}", node.getNodeId(),
-                                    endpointCommandClass.getCommandClass().getLabel());
-                            ZWaveCommandClassDynamicState zdds2 = (ZWaveCommandClassDynamicState) endpointCommandClass;
-                            Collection<SerialMessage> dynamicQueries = zdds2.getDynamicValues(true);
-                            for (SerialMessage serialMessage : dynamicQueries) {
-                                sendData(node.encapsulate(serialMessage, endpointCommandClass,
-                                        endpoint.getEndpointId()));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    /*
+     * public void pollNode(ZWaveNode node) {
+     * for (ZWaveCommandClass zwaveCommandClass : node.getCommandClasses()) {
+     * logger.trace("NODE {}: Inspecting command class {}", node.getNodeId(),
+     * zwaveCommandClass.getCommandClass().getLabel());
+     * if (zwaveCommandClass instanceof ZWaveCommandClassDynamicState) {
+     * logger.debug("NODE {}: Found dynamic state command class {}", node.getNodeId(),
+     * zwaveCommandClass.getCommandClass().getLabel());
+     * ZWaveCommandClassDynamicState zdds = (ZWaveCommandClassDynamicState) zwaveCommandClass;
+     * int instances = zwaveCommandClass.getInstances();
+     * if (instances == 1) {
+     * Collection<SerialMessage> dynamicQueries = zdds.getDynamicValues(true);
+     * for (SerialMessage serialMessage : dynamicQueries) {
+     * sendData(serialMessage);
+     * }
+     * } else {
+     * for (int i = 1; i <= instances; i++) {
+     * Collection<SerialMessage> dynamicQueries = zdds.getDynamicValues(true);
+     * for (SerialMessage serialMessage : dynamicQueries) {
+     * sendData(node.encapsulate(serialMessage, zwaveCommandClass, i));
+     * }
+     * }
+     * }
+     * } else if (zwaveCommandClass instanceof ZWaveMultiInstanceCommandClass) {
+     * ZWaveMultiInstanceCommandClass multiInstanceCommandClass = (ZWaveMultiInstanceCommandClass) zwaveCommandClass;
+     * for (ZWaveEndpoint endpoint : multiInstanceCommandClass.getEndpoints()) {
+     * for (ZWaveCommandClass endpointCommandClass : endpoint.getCommandClasses()) {
+     * logger.trace("NODE {}: Inspecting command class {} for endpoint {}", node.getNodeId(),
+     * endpointCommandClass.getCommandClass().getLabel(), endpoint.getEndpointId());
+     * if (endpointCommandClass instanceof ZWaveCommandClassDynamicState) {
+     * logger.debug("NODE {}: Found dynamic state command class {}", node.getNodeId(),
+     * endpointCommandClass.getCommandClass().getLabel());
+     * ZWaveCommandClassDynamicState zdds2 = (ZWaveCommandClassDynamicState) endpointCommandClass;
+     * Collection<SerialMessage> dynamicQueries = zdds2.getDynamicValues(true);
+     * for (SerialMessage serialMessage : dynamicQueries) {
+     * sendData(node.encapsulate(serialMessage, endpointCommandClass,
+     * endpoint.getEndpointId()));
+     * }
+     * }
+     * }
+     * }
+     * }
+     * }
+     * }
+     */
 
     /**
      * Request the node routing information.
@@ -740,6 +729,7 @@ public class ZWaveController {
      */
     public void requestAddNodesStart() {
         this.enqueue(new AddNodeMessageClass().doRequestStart(true));
+        logger.debug("ZWave controller start inclusion");
     }
 
     /**
@@ -748,6 +738,7 @@ public class ZWaveController {
      */
     public void requestAddNodesStop() {
         this.enqueue(new AddNodeMessageClass().doRequestStop());
+        logger.debug("ZWave controller end inclusion");
     }
 
     /**
@@ -756,6 +747,7 @@ public class ZWaveController {
      */
     public void requestRemoveNodesStart() {
         this.enqueue(new RemoveNodeMessageClass().doRequestStart(true));
+        logger.debug("ZWave controller start exclusion");
     }
 
     /**
@@ -764,6 +756,7 @@ public class ZWaveController {
      */
     public void requestRemoveNodesStop() {
         this.enqueue(new RemoveNodeMessageClass().doRequestStop());
+        logger.debug("ZWave controller end exclusion");
     }
 
     /**
@@ -780,6 +773,7 @@ public class ZWaveController {
         SerialMessage msg = new SerialApiSoftResetMessageClass().doRequest();
         msg.attempts = 1;
         this.enqueue(msg);
+        logger.debug("ZWave controller soft reset");
     }
 
     /**
@@ -800,6 +794,7 @@ public class ZWaveController {
         // Clear all the nodes and we'll reinitialise
         this.zwaveNodes.clear();
         this.enqueue(new SerialApiGetInitDataMessageClass().doRequest());
+        logger.debug("ZWave controller hard reset");
     }
 
     /**
@@ -1104,6 +1099,10 @@ public class ZWaveController {
     private class ZWaveSendThread extends Thread {
 
         private final Logger logger = LoggerFactory.getLogger(ZWaveSendThread.class);
+
+        ZWaveSendThread() {
+            super("ZWaveSendThread");
+        }
 
         /**
          * Run method. Runs the actual sending process.
