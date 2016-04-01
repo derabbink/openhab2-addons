@@ -151,7 +151,7 @@ public abstract class ZWaveSecurityCommandClass extends ZWaveCommandClass {
      *
      * Package-protected visible for test case use
      */
-    static boolean DROP_PACKETS_ON_MAC_FAILURE = true;
+    public static boolean DROP_PACKETS_ON_MAC_FAILURE = true;
 
     /**
      * Should be set to true unless we find a good reason not to since we
@@ -857,7 +857,7 @@ public abstract class ZWaveSecurityCommandClass extends ZWaveCommandClass {
      *
      * @throws GeneralSecurityException
      */
-    byte[] generateMAC(byte commandClass, byte[] ciphertext, byte sendingNode, byte receivingNode, byte[] iv)
+    public byte[] generateMAC(byte commandClass, byte[] ciphertext, byte sendingNode, byte receivingNode, byte[] iv)
             throws GeneralSecurityException {
         traceHex("generateMAC ciphertext", ciphertext);
         traceHex("generateMAC iv", iv);

@@ -64,14 +64,14 @@ public class ZWaveSecureNonceTracker {
      *
      * Package-protected visible for test case use
      */
-    static boolean USE_SECURE_CRYPTO_PRACTICES = true;
+    public static boolean USE_SECURE_CRYPTO_PRACTICES = true;
 
     /**
      * It's a security best practice to periodically re-seed our random number
      * generator
      * http://www.cigital.com/justice-league-blog/2009/08/14/proper-use-of-javas-securerandom/
      */
-    private static final long SECURE_RANDOM_RESEED_INTERVAL_MILLIS = TimeUnit.DAYS.toMillis(1);
+    private final long SECURE_RANDOM_RESEED_INTERVAL_MILLIS = TimeUnit.DAYS.toMillis(1);
 
     private final ZWaveNode node;
 
@@ -102,6 +102,7 @@ public class ZWaveSecureNonceTracker {
      * the time from which we generate the nonce request message to the time we actually send it can
      * be a significant delay, especially during secure inclusion
      */
+    // TODO: Remove
     private SerialMessage requestNonceMessage = null; // TODO: DB what was the point of this?
 
     private SecureRandom secureRandom = null;
